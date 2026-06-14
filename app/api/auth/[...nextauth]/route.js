@@ -57,7 +57,8 @@ export const authOptions = {
         await User.create({
           username: user.name,
           email: user.email,
-          address: null
+          address: null,
+          password: "123"
         });
       }
 
