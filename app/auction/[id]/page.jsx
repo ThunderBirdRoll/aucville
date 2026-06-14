@@ -265,7 +265,7 @@ export default function AuctionDetailPage() {
         <div className="dp-wrap">
           <nav className="bc">
             <a href="/">Home</a><span className="bc-sep">/</span>
-            <a href="/auctions">Auctions</a><span className="bc-sep">/</span>
+            <a href="/auction">Auctions</a><span className="bc-sep">/</span>
             <span className="bc-cur">{loading ? "Loading…" : auction?.title}</span>
           </nav>
 

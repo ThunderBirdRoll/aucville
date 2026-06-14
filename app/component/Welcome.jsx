@@ -149,12 +149,7 @@ export default function WelcomePopup() {
 
           <div className="wp-head">
             <div className="wp-icon">
-              {/* gavel icon */}
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M14 4L20 10" /><path d="M5.5 14.5L9.5 10.5" />
-                <path d="M3.5 20.5L9.5 14.5" /><path d="M8 8L16 16" />
-                <path d="M14 4L10 8" /><path d="M16 16l4 4" />
-              </svg>
+              
             </div>
             <div className="wp-title">Welcome to Aucville</div>
             <div className="wp-sub">The premier platform for real-time online auctions</div>
@@ -199,7 +194,7 @@ export default function WelcomePopup() {
               <button className="wp-btn-ghost"   onClick={close}>Just browsing</button>
             </div>
 
-            <p className="wp-note">Won't show again after this visit · Cookie expires in 2 days</p>
+           
           </div>
 
         </div>

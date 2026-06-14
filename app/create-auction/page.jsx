@@ -10,7 +10,7 @@ import {
     AlertCircle, MapPin
 } from "lucide-react";
 
-const CLOUDINARY_CLOUD_NAME   = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 const CLOUDINARY_UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 const CATEGORIES = ["Electronics", "Fashion", "Home & Living", "Real Estate", "Vehicles"];
 
@@ -94,30 +94,31 @@ function BlockerModal({ reason, onLogin, onAddAddress }) {
 // ── Main page ──────────────────────────────────────────────────────────────────
 export default function CreateAuction() {
     const fileRef = useRef(null);
-    const { data: session, status } = useSession();
-    // console.log("SESSION:", session.user, "STATUS:", status);
     const router = useRouter();
+    const { data: session, status } = useSession();
+   
+
 
     // "not-logged-in" | "no-address" | null
-    const [blocker, setBlocker]             = useState(null);
+    const [blocker, setBlocker] = useState(null);
     const [checkingAddress, setCheckingAddress] = useState(true);
 
     const [form, setForm] = useState({
         title: "", imageUrl: "", price: "", category: "",
         endTime: "", weight: "", length: "", width: "", height: "",
     });
-    const [endDate, setEndDate]         = useState("");
+    const [endDate, setEndDate] = useState("");
     const [endTimeOfDay, setEndTimeOfDay] = useState("");
-    const [imgMode, setImgMode]         = useState("upload");
-    const [urlInput, setUrlInput]       = useState("");
-    const [uploading, setUploading]     = useState(false);
-    const [uploadErr, setUploadErr]     = useState("");
-    const [preview, setPreview]         = useState("");
-    const [dragOver, setDragOver]       = useState(false);
-    const [submitting, setSubmitting]   = useState(false);
-    const [submitErr, setSubmitErr]     = useState("");
-    const [submitted, setSubmitted]     = useState(false);
-    const [errors, setErrors]           = useState({});
+    const [imgMode, setImgMode] = useState("upload");
+    const [urlInput, setUrlInput] = useState("");
+    const [uploading, setUploading] = useState(false);
+    const [uploadErr, setUploadErr] = useState("");
+    const [preview, setPreview] = useState("");
+    const [dragOver, setDragOver] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+    const [submitErr, setSubmitErr] = useState("");
+    const [submitted, setSubmitted] = useState(false);
+    const [errors, setErrors] = useState({});
 
     // ── Session + address check ──────────────────────────────────────────────
     useEffect(() => {
@@ -131,7 +132,7 @@ export default function CreateAuction() {
 
         async function checkAddress() {
             try {
-                const res  = await fetch("/api/user/me");
+                const res = await fetch("/api/user/me");
                 const data = await res.json();
                 const addr = data.address;
                 const hasAddress = addr && (addr.addressline1 || addr.city || addr.zip);
@@ -149,18 +150,18 @@ export default function CreateAuction() {
     async function uploadToCloudinary(file) {
         if (!file) return;
         if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) { setUploadErr("Cloudinary config is missing"); return; }
-        if (!file.type.startsWith("image/"))   { setUploadErr("Only image files are allowed"); return; }
-        if (file.size > 10 * 1024 * 1024)      { setUploadErr("File size must be under 10MB"); return; }
+        if (!file.type.startsWith("image/")) { setUploadErr("Only image files are allowed"); return; }
+        if (file.size > 10 * 1024 * 1024) { setUploadErr("File size must be under 10MB"); return; }
 
         setUploading(true); setUploadErr("");
         try {
             const fd = new FormData();
             fd.append("file", file);
             fd.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-            const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, { method: "POST", body: fd });
+            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, { method: "POST", body: fd });
             const data = await res.json();
             if (!res.ok || data.error) throw new Error(data.error?.message || "Upload failed");
-            if (!data.secure_url)      throw new Error("No image URL returned from Cloudinary");
+            if (!data.secure_url) throw new Error("No image URL returned from Cloudinary");
             setForm(f => ({ ...f, imageUrl: data.secure_url }));
             setPreview(data.secure_url);
         } catch (err) {
@@ -186,22 +187,22 @@ export default function CreateAuction() {
     function updateEndDateTime(date, time) {
         setEndDate(date); setEndTimeOfDay(time);
         if (date && time) { setForm(f => ({ ...f, endTime: new Date(`${date}T${time}`).toISOString() })); }
-        else              { setForm(f => ({ ...f, endTime: "" })); }
+        else { setForm(f => ({ ...f, endTime: "" })); }
     }
 
     function validate() {
         const e = {};
-        if (!form.title.trim())                              e.title    = "Title is required";
-        if (!form.imageUrl)                                  e.imageUrl = "Upload or paste an image";
-        if (!form.price || parseFloat(form.price) <= 0)     e.price    = "Starting price must be greater than 0";
-        if (!form.category)                                  e.category = "Select a category";
-        if (!form.endTime)                                   e.endTime  = "Select an end date and time";
+        if (!form.title.trim()) e.title = "Title is required";
+        if (!form.imageUrl) e.imageUrl = "Upload or paste an image";
+        if (!form.price || parseFloat(form.price) <= 0) e.price = "Starting price must be greater than 0";
+        if (!form.category) e.category = "Select a category";
+        if (!form.endTime) e.endTime = "Select an end date and time";
         const w = parseFloat(form.weight), l = parseFloat(form.length),
-              wi = parseFloat(form.width),  h = parseFloat(form.height);
+            wi = parseFloat(form.width), h = parseFloat(form.height);
         if (!form.weight || isNaN(w) || w < 0.1 || w > 50) e.weight = "Weight must be 0.1–50 lbs";
-        if (!form.length || isNaN(l) || l <= 0  || l > 60) e.length = "Length must be 0.1–60 in";
-        if (!form.width  || isNaN(wi)|| wi <= 0 || wi > 30) e.width = "Width must be 0.1–30 in";
-        if (!form.height || isNaN(h) || h <= 0  || h > 30) e.height = "Height must be 0.1–30 in";
+        if (!form.length || isNaN(l) || l <= 0 || l > 60) e.length = "Length must be 0.1–60 in";
+        if (!form.width || isNaN(wi) || wi <= 0 || wi > 30) e.width = "Width must be 0.1–30 in";
+        if (!form.height || isNaN(h) || h <= 0 || h > 30) e.height = "Height must be 0.1–30 in";
         if (!e.length && !e.width && !e.height) {
             const girth = l + 2 * wi + 2 * h;
             if (girth > 130) e.length = `Girth (L + 2W + 2H = ${girth}″) exceeds 130″`;
@@ -223,7 +224,7 @@ export default function CreateAuction() {
                     category: form.category, endTime: form.endTime,
                     packageDetails: {
                         weight: parseFloat(form.weight), length: parseFloat(form.length),
-                        width: parseFloat(form.width),   height: parseFloat(form.height),
+                        width: parseFloat(form.width), height: parseFloat(form.height),
                     },
                     owner: session?.user?.id || null,   // replace with user ID if available
                 }),
@@ -251,19 +252,19 @@ export default function CreateAuction() {
     );
 
     if (submitted) return (
-                <>
-                <Navbar/>
-        <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'DM Sans',sans-serif", background: "#fff" }}>
-            <div style={{ textAlign: "center", padding: "40px 24px" }}>
-                <CheckCircle size={52} stroke="#52B788" style={{ marginBottom: 16 }} />
-                <div style={{ fontSize: 22, fontWeight: 300, color: "#111827", marginBottom: 8 }}>Auction created</div>
-                <div style={{ fontSize: 14, color: "#374151", fontWeight: 300 }}>Your item is now live for bidding.</div>
-                <button onClick={reset} style={{ marginTop: 28, background: "#1B3A2D", color: "#fff", border: "none", borderRadius: 10, padding: "10px 28px", fontSize: 13, fontWeight: 400, cursor: "pointer", fontFamily: "inherit" }}>
-                    Create another
-                </button>
+        <>
+            <Navbar />
+            <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'DM Sans',sans-serif", background: "#fff" }}>
+                <div style={{ textAlign: "center", padding: "40px 24px" }}>
+                    <CheckCircle size={52} stroke="#52B788" style={{ marginBottom: 16 }} />
+                    <div style={{ fontSize: 22, fontWeight: 300, color: "#111827", marginBottom: 8 }}>Auction created</div>
+                    <div style={{ fontSize: 14, color: "#374151", fontWeight: 300 }}>Your item is now live for bidding.</div>
+                    <button onClick={reset} style={{ marginTop: 28, background: "#1B3A2D", color: "#fff", border: "none", borderRadius: 10, padding: "10px 28px", fontSize: 13, fontWeight: 400, cursor: "pointer", fontFamily: "inherit" }}>
+                        Create another
+                    </button>
+                </div>
             </div>
-        </div>
-                </>
+        </>
     );
 
     return (
@@ -443,9 +444,9 @@ export default function CreateAuction() {
                         <div className="pkg-grid">
                             {[
                                 { key: "weight", label: "Weight (lbs)", placeholder: "0.0" },
-                                { key: "length", label: "Length (in)",  placeholder: "0.0" },
-                                { key: "width",  label: "Width (in)",   placeholder: "0.0" },
-                                { key: "height", label: "Height (in)",  placeholder: "0.0" },
+                                { key: "length", label: "Length (in)", placeholder: "0.0" },
+                                { key: "width", label: "Width (in)", placeholder: "0.0" },
+                                { key: "height", label: "Height (in)", placeholder: "0.0" },
                             ].map(f => (
                                 <div key={f.key} className="ca-field">
                                     <label className="ca-label">{f.label} <span className="req">*</span></label>
