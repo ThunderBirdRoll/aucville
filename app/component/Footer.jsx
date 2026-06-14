@@ -2,11 +2,15 @@
 import { useRouter } from "next/navigation";
 import { useRef, useState, useEffect } from "react";
 
-const NAV_ITEMS = [
-  { label: "Auctions",       href: "/auction" },
-  { label: "Create Auction", href: "/create-auction" },
-  { label: "My Auctions",    href: "#" },
-  { label: "Orders",         href: "#" },
+const BROWSE_ITEMS = [
+  { label: "All auctions",    href: "/auction" },
+  { label: "Create auction",  href: "/create-auction" },
+];
+
+const ACCOUNT_ITEMS = [
+  { label: "My auctions", href: "/my-auction" },
+  { label: "Orders",      href: "/orders" },
+  { label: "Shipping address", href: "/address" },
 ];
 
 export default function Footer() {
@@ -39,11 +43,6 @@ export default function Footer() {
           from { opacity: 0; transform: translateY(18px); }
           to   { opacity: 1; transform: translateY(0); }
         }
-        @keyframes greenDrift {
-          0%   { transform: translateY(0px) scale(1); }
-          50%  { transform: translateY(-20px) scale(1.04); }
-          100% { transform: translateY(0px) scale(1); }
-        }
         @keyframes barShimmer {
           0%   { background-position: 0% 50%; }
           50%  { background-position: 100% 50%; }
@@ -51,37 +50,10 @@ export default function Footer() {
         }
 
         .ft {
-          background: #ffffff;
+          background: #FAFBFA;
           font-family: 'DM Sans', 'Helvetica Neue', sans-serif;
           position: relative;
-          overflow: hidden;
-        }
-
-        .ft-bg { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
-        .ft-bg-green {
-          position: absolute;
-          bottom: -30%; left: -15%;
-          width: 70%; height: 110%;
-          background: radial-gradient(
-            ellipse at 20% 90%,
-            rgba(26,122,72,0.10) 0%,
-            rgba(82,183,136,0.06) 40%,
-            transparent 72%
-          );
-          animation: greenDrift 12s ease-in-out infinite;
-          will-change: transform;
-        }
-        .ft-bg-secondary {
-          position: absolute;
-          top: -25%; right: -10%;
-          width: 45%; height: 90%;
-          background: radial-gradient(
-            ellipse at 85% 15%,
-            rgba(82,183,136,0.07) 0%,
-            transparent 70%
-          );
-          animation: greenDrift 16s ease-in-out infinite reverse;
-          will-change: transform;
+          border-top: 0.5px solid #E5E7EB;
         }
 
         .ft-accent {
@@ -90,11 +62,9 @@ export default function Footer() {
           background-size: 200% 100%;
           animation: barShimmer 5s ease infinite;
           width: 100%;
-          position: relative; z-index: 2;
         }
 
         .ft-wrap {
-          position: relative; z-index: 1;
           max-width: 1100px; margin: 0 auto;
           padding: clamp(32px,5vw,52px) clamp(18px,5vw,48px) clamp(20px,4vw,32px);
         }
@@ -102,30 +72,31 @@ export default function Footer() {
         .anim { opacity: 0; }
         .anim.go { animation: slideUp .55s cubic-bezier(.22,.68,0,1.2) forwards; }
         .anim.go.d1 { animation-delay: .05s; }
-        .anim.go.d2 { animation-delay: .14s; }
+        .anim.go.d2 { animation-delay: .12s; }
+        .anim.go.d3 { animation-delay: .19s; }
 
-        /* top row: brand + nav links */
-        .ft-top {
-          display: flex; justify-content: space-between; align-items: flex-start;
-          gap: 28px; flex-wrap: wrap;
+        .ft-grid {
+          display: grid;
+          grid-template-columns: 1.4fr 1fr 1fr;
+          gap: 36px;
           padding-bottom: clamp(24px,4vw,36px);
         }
 
-        .ft-brand { display: flex; flex-direction: column; gap: 8px; max-width: 320px; }
         .ft-logo {
           font-size: clamp(20px,2.5vw,26px); font-weight: 700;
           color: #0a1f14; letter-spacing: -0.5px; cursor: pointer;
+          margin-bottom: 10px;
         }
         .ft-logo span { color: #1a7a48; }
         .ft-tagline {
           font-size: 13px; color: #4d7060; font-weight: 400; line-height: 1.7;
+          max-width: 280px; margin-bottom: 16px;
         }
         .ft-live-badge {
           display: inline-flex; align-items: center; gap: 7px;
-          background: rgba(255,255,255,0.9);
-          border: 1px solid rgba(26,122,72,0.28);
+          background: #ffffff;
+          border: 0.5px solid rgba(26,122,72,0.28);
           border-radius: 20px; padding: 5px 14px;
-          margin-top: 6px; width: fit-content;
           font-size: 11.5px; color: #0f4527; font-weight: 500;
         }
         .ft-live-dot {
@@ -134,68 +105,89 @@ export default function Footer() {
           animation: pulse 1.5s ease-in-out infinite;
         }
 
-        .ft-nav-title {
+        .ft-col-title {
           font-size: 11px; font-weight: 600; color: #145c35;
-          text-transform: uppercase; letter-spacing: 1.4px; margin-bottom: 14px;
+          text-transform: uppercase; letter-spacing: 1.4px; margin-bottom: 16px;
         }
-        .ft-links { display: flex; flex-direction: column; gap: 10px; }
+        .ft-links { display: flex; flex-direction: column; gap: 12px; }
         .ft-link {
           font-size: 13.5px; font-weight: 400; color: #3d5246;
-          cursor: pointer; transition: color .15s, transform .15s;
+          cursor: pointer; transition: color .15s;
           background: none; border: none; padding: 0;
           font-family: inherit; text-align: left;
+          display: flex; align-items: center; gap: 6px;
         }
-        .ft-link:hover { color: #0f4527; transform: translateX(2px); }
+        .ft-link:hover { color: #0f4527; }
+        .ft-link-arrow {
+          opacity: 0; transition: opacity .15s, transform .15s;
+          transform: translateX(-3px);
+          font-size: 12px;
+        }
+        .ft-link:hover .ft-link-arrow { opacity: 1; transform: translateX(0); }
 
-        .ft-hr { height: 1px; background: rgba(181,212,195,0.6); }
+        .ft-help-card {
+          background: #ffffff;
+          border: 0.5px solid #E5E7EB;
+          border-radius: 14px;
+          padding: 16px;
+        }
+        .ft-help-title { font-size: 13px; font-weight: 500; color: #111827; margin-bottom: 4px; }
+        .ft-help-text { font-size: 12px; color: #6B7280; line-height: 1.6; margin-bottom: 12px; }
+        .ft-help-btn {
+          display: inline-flex; align-items: center; gap: 6px;
+          background: #1B3A2D; color: #fff; border: none;
+          border-radius: 9px; padding: 8px 14px;
+          font-size: 12.5px; font-weight: 400; cursor: pointer;
+          font-family: inherit; transition: background .15s;
+        }
+        .ft-help-btn:hover { background: #2D6A4F; }
 
-        /* bottom bar */
+        .ft-hr { height: 0.5px; background: #E5E7EB; }
+
         .ft-bottom {
           display: flex; align-items: center; justify-content: space-between;
           gap: 14px; flex-wrap: wrap;
           padding-top: 20px;
         }
-        .ft-copy { font-size: 12px; color: #8fada0; font-weight: 400; }
+        .ft-copy { font-size: 12px; color: #9CA3AF; font-weight: 400; }
         .ft-copy strong { color: #3d5246; font-weight: 600; }
 
         .ft-socials { display: flex; gap: 8px; }
         .ft-social-btn {
-          width: 34px; height: 34px;
-          border: 1.5px solid #c8ddd5; border-radius: 10px;
-          background: #ffffff; color: #4d7060;
+          width: 32px; height: 32px;
+          border: 0.5px solid #E5E7EB; border-radius: 9px;
+          background: #ffffff; color: #6B7280;
           display: flex; align-items: center; justify-content: center;
           cursor: pointer;
-          transition: border-color .15s, color .15s, background .15s, transform .15s;
+          transition: border-color .15s, color .15s, background .15s;
         }
         .ft-social-btn:hover {
-          border-color: #1a7a48; color: #0f4527;
+          border-color: #52B788; color: #1B3A2D;
           background: rgba(82,183,136,0.06);
-          transform: translateY(-2px);
         }
 
-        @media (max-width: 640px) {
-          .ft-top { flex-direction: column; gap: 24px; }
+        @media (max-width: 720px) {
+          .ft-grid { grid-template-columns: 1fr 1fr; gap: 28px 20px; }
+          .ft-grid > div:first-child { grid-column: 1 / -1; }
+        }
+        @media (max-width: 480px) {
+          .ft-grid { grid-template-columns: 1fr; }
           .ft-bottom { flex-direction: column; align-items: flex-start; gap: 14px; }
         }
         @media (prefers-reduced-motion: reduce) {
           .anim { opacity: 1; animation: none !important; }
-          .ft-bg-green, .ft-bg-secondary, .ft-accent, .ft-live-dot { animation: none; }
-          .ft-link:hover, .ft-social-btn:hover { transform: none; }
+          .ft-accent, .ft-live-dot { animation: none; }
         }
       `}</style>
 
       <footer className="ft" ref={ref}>
-        <div className="ft-bg">
-          <div className="ft-bg-green" />
-          <div className="ft-bg-secondary" />
-        </div>
         <div className="ft-accent" />
 
         <div className="ft-wrap">
+          <div className="ft-grid">
 
-          {/* top: brand + nav */}
-          <div className="ft-top">
-            <div className={`ft-brand anim ${visible ? "go d1" : ""}`}>
+            {/* Brand */}
+            <div className={`anim ${visible ? "go d1" : ""}`}>
               <div className="ft-logo" onClick={() => router.push("/")}>
                 <span>Aucville</span>
               </div>
@@ -208,22 +200,47 @@ export default function Footer() {
               </div>
             </div>
 
+            {/* Browse */}
             <div className={`anim ${visible ? "go d2" : ""}`}>
-              <div className="ft-nav-title">Quick links</div>
+              <div className="ft-col-title">Browse</div>
               <div className="ft-links">
-                {NAV_ITEMS.map(({ label, href }) => (
+                {BROWSE_ITEMS.map(({ label, href }) => (
                   <button key={label} className="ft-link" onClick={() => router.push(href)}>
                     {label}
+                    <span className="ft-link-arrow">→</span>
+                  </button>
+                ))}
+              </div>
+              <div className="ft-col-title" style={{ marginTop: 24 }}>Account</div>
+              <div className="ft-links">
+                {ACCOUNT_ITEMS.map(({ label, href }) => (
+                  <button key={label} className="ft-link" onClick={() => router.push(href)}>
+                    {label}
+                    <span className="ft-link-arrow">→</span>
                   </button>
                 ))}
               </div>
             </div>
+
+            {/* Help card */}
+            <div className={`anim ${visible ? "go d3" : ""}`}>
+              <div className="ft-col-title">Need help?</div>
+              <div className="ft-help-card">
+                <div className="ft-help-title">Questions about an order?</div>
+                <div className="ft-help-text">
+                  Our team can help with shipping, bidding, or account issues.
+                </div>
+                <button className="ft-help-btn" onClick={() => router.push("/orders")}>
+                  View my orders
+                </button>
+              </div>
+            </div>
+
           </div>
 
           <div className="ft-hr" />
 
-          {/* bottom bar */}
-          <div className={`ft-bottom anim ${visible ? "go d2" : ""}`}>
+          <div className={`ft-bottom anim ${visible ? "go d3" : ""}`}>
             <div className="ft-copy">
               © {new Date().getFullYear()} <strong>Aucville</strong>. All rights reserved.
             </div>

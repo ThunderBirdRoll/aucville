@@ -7,9 +7,10 @@ import Footer from "../component/Footer";
 import {
   User, Mail, MapPin, Plus, Gavel, Trophy,
   Clock, CheckCircle, BarChart2, Loader2, AlertCircle,
-  ChevronRight, Package
+  ChevronRight, Package, Edit2
 } from "lucide-react";
 
+const CATEGORIES = ["Electronics", "Fashion", "Home & Living", "Real Estate"];
 
 function PlaceOrderButton({ auction }) {
   const router = useRouter();
@@ -81,11 +82,11 @@ function PlaceOrderButton({ auction }) {
       </button>
       {showConfirm && (
         <div
-         style={{
-  position: "fixed", inset: 0, background: "rgba(15,23,42,0.6)",
-  display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999,
-  padding: 16
-}}
+          style={{
+            position: "fixed", inset: 0, background: "rgba(15,23,42,0.6)",
+            display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999,
+            padding: 16
+          }}
           onClick={(e) => { e.stopPropagation(); setShowConfirm(false); }}
         >
           <div
@@ -154,6 +155,186 @@ function PlaceOrderButton({ auction }) {
   );
 }
 
+function EditAuctionModal({ auction, onClose, onSaved }) {
+  const toLocalInput = (iso) => {
+    const d = new Date(iso);
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
+  const [form, setForm] = useState({
+    title: auction.title ?? "",
+    category: auction.category ?? CATEGORIES[0],
+    startingPrice: auction.startingPrice ?? 0,
+    endTime: toLocalInput(auction.endTime),
+  });
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
+
+  const update = (key, val) => setForm(f => ({ ...f, [key]: val }));
+
+  const handleSave = async () => {
+    setSaving(true);
+    setErr("");
+    try {
+      const res = await fetch(`/api/auction/edit/${auction._id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: form.title,
+          category: form.category,
+          startingPrice: Number(form.startingPrice),
+          endTime: new Date(form.endTime).toISOString(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setErr(data.error || "Failed to update auction.");
+        return;
+      }
+      onSaved(data.auction);
+      onClose();
+    } catch {
+      setErr("Failed to update auction.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div
+      style={{
+        position: "fixed", inset: 0,
+        display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999,
+        padding: 16
+      }}
+      onClick={(e) => { e.stopPropagation(); onClose(); }}
+    >
+      <div
+        style={{
+          background: "#ffffff", borderRadius: 16, padding: 28, maxWidth: 420, width: "100%",
+          fontFamily: "'DM Sans', sans-serif", boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
+          border: "1px solid #E5E7EB"
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div style={{
+          width: 44, height: 44, borderRadius: 12, background: "#E7F5EF",
+          display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16
+        }}>
+          <Gavel size={20} stroke="#1B3A2D" />
+        </div>
+
+        <h3 style={{ fontSize: 17, fontWeight: 500, marginBottom: 6, color: "#111827" }}>
+          Edit auction
+        </h3>
+        <p style={{ fontSize: 13, color: "#6B7280", fontWeight: 400, marginBottom: 18 }}>
+          You can update these details until the auction ends.
+        </p>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 22 }}>
+          <div>
+            <label style={{ fontSize: 11.5, fontWeight: 500, color: "#374151", display: "block", marginBottom: 6 }}>
+              Title
+            </label>
+            <input
+              type="text"
+              value={form.title}
+              onChange={e => update("title", e.target.value)}
+              style={{
+                width: "100%", fontFamily: "inherit", fontSize: 13.5, fontWeight: 300,
+                padding: "10px 12px", border: "1px solid #E5E7EB", borderRadius: 10,
+                color: "#111827", outline: "none"
+              }}
+            />
+          </div>
+
+          <div>
+            <label style={{ fontSize: 11.5, fontWeight: 500, color: "#374151", display: "block", marginBottom: 6 }}>
+              Category
+            </label>
+            <select
+              value={form.category}
+              onChange={e => update("category", e.target.value)}
+              style={{
+                width: "100%", fontFamily: "inherit", fontSize: 13.5, fontWeight: 300,
+                padding: "10px 12px", border: "1px solid #E5E7EB", borderRadius: 10,
+                color: "#111827", outline: "none", background: "#fff"
+              }}
+            >
+              {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <label style={{ fontSize: 11.5, fontWeight: 500, color: "#374151", display: "block", marginBottom: 6 }}>
+              Starting price ($)
+            </label>
+            <input
+              type="number"
+              min="1"
+              value={form.startingPrice}
+              onChange={e => update("startingPrice", e.target.value)}
+              style={{
+                width: "100%", fontFamily: "inherit", fontSize: 13.5, fontWeight: 300,
+                padding: "10px 12px", border: "1px solid #E5E7EB", borderRadius: 10,
+                color: "#111827", outline: "none"
+              }}
+            />
+          </div>
+
+          <div>
+            <label style={{ fontSize: 11.5, fontWeight: 500, color: "#374151", display: "block", marginBottom: 6 }}>
+              End time
+            </label>
+            <input
+              type="datetime-local"
+              value={form.endTime}
+              onChange={e => update("endTime", e.target.value)}
+              style={{
+                width: "100%", fontFamily: "inherit", fontSize: 13.5, fontWeight: 300,
+                padding: "10px 12px", border: "1px solid #E5E7EB", borderRadius: 10,
+                color: "#111827", outline: "none"
+              }}
+            />
+          </div>
+        </div>
+
+        {err && (
+          <div style={{
+            display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, color: "#B91C1C",
+            background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 10, padding: "10px 12px",
+            marginBottom: 14
+          }}>
+            <AlertCircle size={13} /> {err}
+          </div>
+        )}
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <button
+            className="addr-btn"
+            onClick={handleSave}
+            disabled={saving}
+            style={{ width: "100%", justifyContent: "center", padding: "11px 16px", fontSize: 13.5, color: "#fff", background: "#1B3A2D" }}
+          >
+            {saving ? "Saving..." : "Save changes"}
+          </button>
+          <button
+            onClick={onClose}
+            disabled={saving}
+            style={{
+              width: "100%", padding: "10px 16px", fontSize: 13, color: "#9CA3AF",
+              background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit"
+            }}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function StatCard({ icon, label, value, accent }) {
   return (
     <div className="stat-card" style={accent ? { borderColor: "rgba(82,183,136,0.4)", background: "rgba(82,183,136,0.04)" } : {}}>
@@ -164,8 +345,9 @@ function StatCard({ icon, label, value, accent }) {
   );
 }
 
-function AuctionRow({ auction, type }) {
+function AuctionRow({ auction, type, onAuctionUpdated }) {
   const router = useRouter();
+  const [showEdit, setShowEdit] = useState(false);
   const isLive = type === "owned" ? auction.isLive : false;
 
   return (
@@ -210,12 +392,29 @@ function AuctionRow({ auction, type }) {
             : `Ended ${new Date(auction.endTime).toLocaleDateString()}`}
         </div>
       </div>
+      {type === "owned" && isLive && (
+        <button
+          className="addr-btn addr-btn-edit"
+          onClick={(e) => { e.stopPropagation(); setShowEdit(true); }}
+          style={{ flexShrink: 0 }}
+        >
+          <Edit2 size={12} /> Edit
+        </button>
+      )}
       {type === "won" && (
         <div onClick={(e) => e.stopPropagation()} style={{ flexShrink: 0 }}>
           <PlaceOrderButton auction={auction} />
         </div>
       )}
       <ChevronRight size={14} className="a-arrow" />
+
+      {showEdit && (
+        <EditAuctionModal
+          auction={auction}
+          onClose={() => setShowEdit(false)}
+          onSaved={(updated) => onAuctionUpdated?.(updated)}
+        />
+      )}
     </div>
   );
 }
@@ -241,6 +440,28 @@ export default function ProfilePage() {
 
   const hasAddress = data?.user?.address &&
     (data.user.address.addressline1 || data.user.address.city);
+
+  const handleAuctionUpdated = (updated) => {
+    setData(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        ownedAuctions: prev.ownedAuctions.map(a =>
+          String(a._id) === String(updated._id)
+            ? {
+                ...a,
+                title: updated.title,
+                category: updated.category,
+                startingPrice: updated.startingPrice,
+                currentPrice: updated.finalPrice ?? updated.startingPrice,
+                endTime: updated.endTime,
+                isLive: new Date(updated.endTime) > new Date(),
+              }
+            : a
+        ),
+      };
+    });
+  };
 
   if (status === "loading" || loading) return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#fff" }}>
@@ -484,7 +705,7 @@ export default function ProfilePage() {
                       </div>
                     ) : (
                       data.ownedAuctions.map(a => (
-                        <AuctionRow key={a._id} auction={a} type="owned" />
+                        <AuctionRow key={a._id} auction={a} type="owned" onAuctionUpdated={handleAuctionUpdated} />
                       ))
                     )}
                   </div>
@@ -508,7 +729,7 @@ export default function ProfilePage() {
             </>
           )}
         </div>
-        {/* <Footer /> */}
+        <Footer />
       </div>
     </>
   );
