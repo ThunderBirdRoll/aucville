@@ -12,5 +12,5 @@ export async function GET() {
     const user = await User.findOne({ email: session.user.email }).lean();
     if (!user) return Response.json({ error: "User not found" }, { status: 404 });
 
-    return Response.json({ address: user.address ?? null });
+    return Response.json({ address: user.address  ?? null , contact:user.contact ?? null });
 }

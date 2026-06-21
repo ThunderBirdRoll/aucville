@@ -22,7 +22,12 @@ const orderSchema = new mongoose.Schema({
     country: String,
   },
   amount: Number,
-  status: { type: String, enum: ["pending", "shipped", "delivered", "cancelled"], default: "pending" },
+  shippingAmount: { type: Number, default: null },
+  totalAmount: { type: Number, default: null },
+  trackingNumber: { type: String, default: null },
+  labelBase64: { type: String, default: null },
+  paymentIntentId: String, // store Stripe PaymentIntent ID for later reference
+  status: { type: String, enum: ["pending_payment", "paid", "shipped", "delivered", "cancelled"], default: "pending_payment" },
 }, { timestamps: true });
 
 export default mongoose.models.Order || mongoose.model("Order", orderSchema);

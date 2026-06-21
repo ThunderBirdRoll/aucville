@@ -4,11 +4,18 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Navbar from "../component/Navbar";
 import Footer from "../component/Footer";
-import { MapPin, CheckCircle, Loader2, AlertCircle, ChevronDown } from "lucide-react";
+import { MapPin, Phone, CheckCircle, Loader2, AlertCircle, ChevronDown } from "lucide-react";
 
 const COUNTRIES = [
-  "United States", "United Kingdom", "Canada", "Australia",
-  "Germany", "France", "Pakistan", "India", "UAE", "Other",
+  { code: "US", label: "United States" },
+  { code: "GB", label: "United Kingdom" },
+  { code: "CA", label: "Canada" },
+  { code: "AU", label: "Australia" },
+  { code: "DE", label: "Germany" },
+  { code: "FR", label: "France" },
+  { code: "PK", label: "Pakistan" },
+  { code: "IN", label: "India" },
+  { code: "AE", label: "UAE" },
 ];
 
 export default function AddressPage() {
@@ -17,7 +24,7 @@ export default function AddressPage() {
 
   const [form, setForm] = useState({
     addressline1: "", addressline2: "",
-    city: "", state: "", zip: "", country: "",
+    city: "", state: "", zip: "", country: "", contact: "",
   });
   const [errors, setErrors]     = useState({});
   const [loading, setLoading]   = useState(true);   // fetching existing address
@@ -39,8 +46,12 @@ export default function AddressPage() {
       try {
         const res  = await fetch("/api/user/me");
         const data = await res.json();
+        console.log(data);
         if (data.address) {
           setForm(f => ({ ...f, ...data.address }));
+        }
+        if (data.contact) {
+          setForm(f => ({ ...f, contact: data.contact }));
         }
       } catch {
         setFetchErr("Could not load your saved address.");
@@ -62,21 +73,29 @@ export default function AddressPage() {
     const e = {};
     if (!form.addressline1.trim()) e.addressline1 = "Street address is required";
     if (!form.city.trim())         e.city         = "City is required";
-    if (!form.state.trim())        e.state        = "State / Province is required";
+    if (!form.state.trim())        e.state        = "State / Province is required code";
     if (!form.zip.trim())          e.zip          = "ZIP / Postal code is required";
-    if (!form.country)             e.country      = "Select a country";
+    if (!form.country)             e.country      = "Select a country code";
+    if (!form.contact.trim()) {
+      e.contact = "Contact number is required";
+    } else if (!/^\+?[0-9\s\-()]{7,20}$/.test(form.contact.trim())) {
+      e.contact = "Enter a valid phone number";
+    }
     setErrors(e);
     return Object.keys(e).length === 0;
   }
 
   async function handleSave() {
+  
     if (!validate()) return;
     setSaving(true); setSaveErr(""); setSaved(false);
     try {
+      const { contact, ...addressFields } = form;
+        console.log(addressFields,"adress");
       const res = await fetch("/api/user/address", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ address: addressFields, contact }),
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
@@ -84,6 +103,7 @@ export default function AddressPage() {
       }
       setSaved(true);
       setTimeout(() => setSaved(false), 3500);
+      router.push("/my-auction");
     } catch (err) {
       setSaveErr(err.message || "Something went wrong.");
     } finally {
@@ -274,6 +294,22 @@ export default function AddressPage() {
               />
             </div>
 
+            {/* Contact number */}
+            <div className="addr-field">
+              <label className="addr-label">
+                Contact number <span className="req">*</span>
+              </label>
+              <input
+                className={`addr-input${errors.contact ? " err" : ""}`}
+                placeholder="+1 555 123 4567"
+                value={form.contact}
+                onChange={set("contact")}
+              />
+              {errors.contact && (
+                <span className="addr-err"><AlertCircle size={11} />{errors.contact}</span>
+              )}
+            </div>
+
             <div className="divider" />
 
             {/* City + State */}
@@ -291,7 +327,7 @@ export default function AddressPage() {
                 )}
               </div>
               <div className="addr-field">
-                <label className="addr-label">State / Province <span className="req">*</span></label>
+                <label className="addr-label">State / Province code <span className="req">*</span></label>
                 <input
                   className={`addr-input${errors.state ? " err" : ""}`}
                   placeholder="NY"
@@ -319,15 +355,15 @@ export default function AddressPage() {
                 )}
               </div>
               <div className="addr-field">
-                <label className="addr-label">Country <span className="req">*</span></label>
+                <label className="addr-label">Country code<span className="req">*</span></label>
                 <div className="sel-wrap">
                   <select
                     className={`addr-input${errors.country ? " err" : ""}`}
                     value={form.country}
                     onChange={set("country")}
                   >
-                    <option value="">Select country</option>
-                    {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    <option value="">Select country code</option>
+                    {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
                   </select>
                   <span className="sel-arrow"><ChevronDown size={14} /></span>
                 </div>

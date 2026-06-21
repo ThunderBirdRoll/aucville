@@ -59,7 +59,7 @@ export async function POST(req) {
       country: sender.address?.country ?? "",
     },
     amount: auction.finalPrice ?? auction.startingPrice,
-    status: "pending",
+    status: "pending_payment",
   });
 
   return Response.json({ success: true, order });

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Navbar from "../component/Navbar";
@@ -7,8 +7,11 @@ import Footer from "../component/Footer";
 import {
   User, Mail, MapPin, Plus, Gavel, Trophy,
   Clock, CheckCircle, BarChart2, Loader2, AlertCircle,
-  ChevronRight, Package, Edit2
+  ChevronRight, Package, Edit2, Upload, Link, X, ImageIcon
 } from "lucide-react";
+
+const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+const CLOUDINARY_UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
 const CATEGORIES = ["Electronics", "Fashion", "Home & Living", "Real Estate"];
 
@@ -40,27 +43,28 @@ function PlaceOrderButton({ auction }) {
     }
   };
 
-  const confirmPlaceOrder = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/orders/place", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ auctionId: auction._id }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        alert(data.error || "Failed to place order.");
-        return;
-      }
-      setOrdered(true);
-      setShowConfirm(false);
-    } catch {
-      alert("Failed to place order.");
-    } finally {
-      setLoading(false);
+ const confirmPlaceOrder = async () => {
+  setLoading(true);
+  try {
+    const res = await fetch("/api/orders/place", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ auctionId: auction._id }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert(data.error || "Failed to place order.");
+      return;
     }
-  };
+    setOrdered(true);
+    setShowConfirm(false);
+    router.push(`/checkout?orderId=${data.order._id}`);
+  } catch {
+    alert("Failed to place order.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const goChangeAddress = () => {
     setShowConfirm(false);
@@ -156,6 +160,7 @@ function PlaceOrderButton({ auction }) {
 }
 
 function EditAuctionModal({ auction, onClose, onSaved }) {
+  const fileRef = useRef(null);
   const toLocalInput = (iso) => {
     const d = new Date(iso);
     const pad = (n) => String(n).padStart(2, "0");
@@ -167,13 +172,58 @@ function EditAuctionModal({ auction, onClose, onSaved }) {
     category: auction.category ?? CATEGORIES[0],
     startingPrice: auction.startingPrice ?? 0,
     endTime: toLocalInput(auction.endTime),
+    imageUrl: auction.imageUrl ?? "",
   });
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
 
+  const [preview, setPreview] = useState(auction.imageUrl ?? "");
+  const [imgMode, setImgMode] = useState("upload");
+  const [urlInput, setUrlInput] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [uploadErr, setUploadErr] = useState("");
+  const [dragOver, setDragOver] = useState(false);
+
   const update = (key, val) => setForm(f => ({ ...f, [key]: val }));
 
+  async function uploadToCloudinary(file) {
+    if (!file) return;
+    if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) { setUploadErr("Cloudinary config is missing"); return; }
+    if (!file.type.startsWith("image/")) { setUploadErr("Only image files are allowed"); return; }
+    if (file.size > 10 * 1024 * 1024) { setUploadErr("File size must be under 10MB"); return; }
+
+    setUploading(true); setUploadErr("");
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error?.message || "Upload failed");
+      if (!data.secure_url) throw new Error("No image URL returned from Cloudinary");
+      update("imageUrl", data.secure_url);
+      setPreview(data.secure_url);
+    } catch (e) {
+      setUploadErr(e.message || "Network error during upload");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function handleFile(file) {
+    if (!file || !file.type.startsWith("image/")) { setUploadErr("Please select an image file."); return; }
+    setPreview(URL.createObjectURL(file));
+    uploadToCloudinary(file);
+  }
+  function handleDrop(e) { e.preventDefault(); setDragOver(false); handleFile(e.dataTransfer.files[0]); }
+  function applyUrl() {
+    const url = urlInput.trim(); if (!url) return;
+    update("imageUrl", url); setPreview(url); setUrlInput("");
+  }
+  function clearImage() { setPreview(""); setUrlInput(""); update("imageUrl", ""); }
+
   const handleSave = async () => {
+    if (uploading) { setErr("Please wait for the image upload to finish."); return; }
     setSaving(true);
     setErr("");
     try {
@@ -185,6 +235,7 @@ function EditAuctionModal({ auction, onClose, onSaved }) {
           category: form.category,
           startingPrice: Number(form.startingPrice),
           endTime: new Date(form.endTime).toISOString(),
+          imageUrl: form.imageUrl,
         }),
       });
       const data = await res.json();
@@ -233,6 +284,121 @@ function EditAuctionModal({ auction, onClose, onSaved }) {
         </p>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 22 }}>
+          <div>
+            <label style={{ fontSize: 11.5, fontWeight: 500, color: "#374151", display: "block", marginBottom: 6 }}>
+              Image
+            </label>
+
+            <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+              <button
+                type="button"
+                onClick={() => setImgMode("upload")}
+                style={{
+                  display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", borderRadius: 20,
+                  fontSize: 12, fontFamily: "inherit", fontWeight: 400, cursor: "pointer",
+                  border: "1px solid #D1D5DB",
+                  background: imgMode === "upload" ? "#1B3A2D" : "transparent",
+                  color: imgMode === "upload" ? "#D8F0E6" : "#374151",
+                  borderColor: imgMode === "upload" ? "#1B3A2D" : "#D1D5DB",
+                }}
+              >
+                <Upload size={12} /> Upload file
+              </button>
+              <button
+                type="button"
+                onClick={() => setImgMode("url")}
+                style={{
+                  display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", borderRadius: 20,
+                  fontSize: 12, fontFamily: "inherit", fontWeight: 400, cursor: "pointer",
+                  border: "1px solid #D1D5DB",
+                  background: imgMode === "url" ? "#1B3A2D" : "transparent",
+                  color: imgMode === "url" ? "#D8F0E6" : "#374151",
+                  borderColor: imgMode === "url" ? "#1B3A2D" : "#D1D5DB",
+                }}
+              >
+                <Link size={12} /> Paste URL
+              </button>
+            </div>
+
+            {preview ? (
+              <div style={{ position: "relative", borderRadius: 12, overflow: "hidden", background: "#F9FAFB" }}>
+                <img
+                  src={preview}
+                  alt="preview"
+                  style={{ width: "100%", maxHeight: 160, objectFit: "cover", display: "block" }}
+                  onError={() => { setPreview(""); setUploadErr("Could not load image."); }}
+                />
+                <button
+                  type="button"
+                  onClick={clearImage}
+                  style={{
+                    position: "absolute", top: 8, right: 8, background: "#fff", border: "none",
+                    borderRadius: "50%", width: 28, height: 28, display: "flex", alignItems: "center",
+                    justifyContent: "center", cursor: "pointer", boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+                  }}
+                >
+                  <X size={13} />
+                </button>
+              </div>
+            ) : imgMode === "upload" ? (
+              <div
+                onClick={() => fileRef.current?.click()}
+                onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={handleDrop}
+                style={{
+                  border: `1.5px dashed ${dragOver ? "#52B788" : "#D1D5DB"}`, borderRadius: 12,
+                  padding: "20px 16px", textAlign: "center", cursor: "pointer",
+                  background: dragOver ? "rgba(82,183,136,0.04)" : "rgba(255,255,255,0.6)",
+                }}
+              >
+                <ImageIcon size={22} stroke="#9CA3AF" style={{ marginBottom: 6 }} />
+                <div style={{ fontSize: 12.5, color: "#374151", fontWeight: 300 }}>
+                  <strong style={{ color: "#52B788", fontWeight: 400 }}>Click to upload</strong> or drag &amp; drop
+                </div>
+                <input
+                  ref={fileRef} type="file" accept="image/*" style={{ display: "none" }}
+                  onChange={e => handleFile(e.target.files[0])}
+                />
+              </div>
+            ) : (
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  value={urlInput}
+                  onChange={e => setUrlInput(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && applyUrl()}
+                  placeholder="https://example.com/image.jpg"
+                  style={{
+                    flex: 1, fontFamily: "inherit", fontSize: 13.5, fontWeight: 300,
+                    padding: "10px 12px", border: "1px solid #E5E7EB", borderRadius: 10,
+                    color: "#111827", outline: "none"
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={applyUrl}
+                  style={{
+                    background: "#1B3A2D", color: "#fff", border: "none", borderRadius: 10,
+                    padding: "0 16px", fontSize: 13, fontWeight: 400, cursor: "pointer", fontFamily: "inherit",
+                  }}
+                >
+                  Apply
+                </button>
+              </div>
+            )}
+
+            {uploading && (
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: "#52B788", marginTop: 6 }}>
+                <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} /> Uploading…
+              </div>
+            )}
+            {uploadErr && (
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: "#EF4444", marginTop: 6 }}>
+                <AlertCircle size={12} />{uploadErr}
+              </div>
+            )}
+          </div>
+
           <div>
             <label style={{ fontSize: 11.5, fontWeight: 500, color: "#374151", display: "block", marginBottom: 6 }}>
               Title
@@ -349,6 +515,7 @@ function AuctionRow({ auction, type, onAuctionUpdated }) {
   const router = useRouter();
   const [showEdit, setShowEdit] = useState(false);
   const isLive = type === "owned" ? auction.isLive : false;
+  const canEdit = type === "owned" && (isLive || (!isLive && auction.bidsCount === 0));
 
   return (
     <div className="a-row" onClick={() => router.push(`/auction/${auction._id}`)}>
@@ -392,7 +559,7 @@ function AuctionRow({ auction, type, onAuctionUpdated }) {
             : `Ended ${new Date(auction.endTime).toLocaleDateString()}`}
         </div>
       </div>
-      {type === "owned" && isLive && (
+      {canEdit && (
         <button
           className="addr-btn addr-btn-edit"
           onClick={(e) => { e.stopPropagation(); setShowEdit(true); }}
@@ -455,6 +622,7 @@ export default function ProfilePage() {
                 startingPrice: updated.startingPrice,
                 currentPrice: updated.finalPrice ?? updated.startingPrice,
                 endTime: updated.endTime,
+                imageUrl: updated.imageUrl ?? a.imageUrl,
                 isLive: new Date(updated.endTime) > new Date(),
               }
             : a

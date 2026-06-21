@@ -15,6 +15,9 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true
     },
+    contact:{
+    type:String
+    },
     address: {
      addressline1: String,
      addressline2: String,
@@ -23,6 +26,10 @@ const userSchema = new mongoose.Schema(
      zip: String,
      country: String      
     }
+    ,
+      contact:{
+ type: String
+      }
 },
 {
     timestamps: true,

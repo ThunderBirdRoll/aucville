@@ -16,6 +16,8 @@ export async function PATCH(req, { params }) {
 
   await connectDB();
 
+  console.log("lof",body)
+
   const user = await User.findOne({ email: session.user.email }).lean();
   if (!user) return Response.json({ error: "User not found" }, { status: 404 });
 
@@ -24,10 +26,6 @@ export async function PATCH(req, { params }) {
 
   if (String(auction.owner) !== String(user._id)) {
     return Response.json({ error: "Only the owner can edit this auction" }, { status: 403 });
-  }
-
-  if (new Date(auction.endTime) <= new Date()) {
-    return Response.json({ error: "This auction has already ended and cannot be edited" }, { status: 400 });
   }
 
   if (body.title !== undefined) {
@@ -41,6 +39,12 @@ export async function PATCH(req, { params }) {
     const category = String(body.category).trim();
     if (!category) return Response.json({ error: "Category cannot be empty" }, { status: 400 });
     auction.category = category;
+  }
+
+    if (body.imageUrl !== undefined) {
+    const imageUrl = String(body.imageUrl).trim();
+    if (!imageUrl) return Response.json({ error: "Category cannot be empty" }, { status: 400 });
+    auction.imageUrl = imageUrl;
   }
 
   if (body.startingPrice !== undefined) {

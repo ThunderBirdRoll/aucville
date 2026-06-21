@@ -61,11 +61,14 @@ function AuctionCard({ auction, index }) {
 
   const displayPrice = auction.finalPrice ?? auction.startingPrice;
 
+  // alternate slide direction by column — even index slides in from left, odd from right
+  const fromSide = index % 2 === 0 ? "lac-card-from-left" : "lac-card-from-right";
+
   return (
     <div
       ref={ref}
-      className={`lac-card ${visible ? "lac-card-visible" : ""}`}
-      style={{ transitionDelay: `${(index % 4) * 0.07}s` }}
+      className={`lac-card ${fromSide} ${visible ? "lac-card-visible" : ""}`}
+      style={{ transitionDelay: `${(index % 4) * 0.08}s` }}
       onClick={() => router.push(`/auction/${auction._id}`)}
       role="button"
       tabIndex={0}
@@ -180,12 +183,6 @@ export default function LiveAuctionCards() {
   width: 520px;
   height: 520px;
   border-radius: 50%;
-  background: radial-gradient(
-    ellipse at center,
-    rgba(82, 183, 136, 0.18) 0%,
-    rgba(187, 247, 208, 0.10) 45%,
-    transparent 75%
-  );
   animation: lacOrbDrift 9s ease-in-out infinite;
   pointer-events: none;
   z-index: 0;
@@ -201,7 +198,7 @@ export default function LiveAuctionCards() {
   width: 380px;
   height: 380px;
   border-radius: 50%;
-  background: radial-gradient(
+ : radial-gradient(
     ellipse at center,
     rgba(34, 197, 94, 0.10) 0%,
     rgba(187, 247, 208, 0.06) 50%,
@@ -221,7 +218,7 @@ export default function LiveAuctionCards() {
 
         /* header */
         .lac-header {
-          display: flex;
+      background     display: flex;
           align-items: flex-end;
           justify-content: space-between;
           gap: 16px;
@@ -282,23 +279,24 @@ export default function LiveAuctionCards() {
         @media (max-width: 560px)  { .lac-grid { grid-template-columns: 1fr; } }
 
         /* card */
-        .lac-card {
-          background: #ffffff;
-          border: 1.5px solid #E5E7EB;
-          border-radius: 14px;
-          overflow: hidden;
-          cursor: pointer;
-          opacity: 0;
-          transform: translateY(16px);
-          transition: opacity 0.4s ease, transform 0.4s ease,
-                      box-shadow 0.2s ease, border-color 0.2s ease;
-        }
-        .lac-card.lac-card-visible { opacity: 1; transform: translateY(0); }
-        .lac-card:hover {
-          border-color: #86efac;
-          box-shadow: 0 4px 20px rgba(22,163,74,0.10);
-          transform: translateY(-2px);
-        }
+       .lac-card {
+  background: #ffffff;
+  border: 1.5px solid #E5E7EB;
+  border-radius: 14px;
+  overflow: hidden;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(.22,.68,0,1.1),
+              box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.lac-card-from-left  { transform: translate(-28px, 14px); }
+.lac-card-from-right { transform: translate(28px, 14px); }
+.lac-card.lac-card-visible { opacity: 1; transform: translate(0, 0); }
+.lac-card:hover {
+  border-color: #86efac;
+  box-shadow: 0 4px 20px rgba(22,163,74,0.10);
+  transform: translateY(-2px);
+}
 
         /* image */
         .lac-img-wrap {
@@ -432,10 +430,21 @@ export default function LiveAuctionCards() {
         .lac-err   { color: #dc2626; font-size: 14px; padding: 24px 0; text-align: center; }
         .lac-empty { text-align: center; padding: 48px 0; color: #9CA3AF; font-size: 14px; }
 
-        @media (max-width: 640px) {
-          .lac-header { flex-direction: column; align-items: flex-start; }
-          .lac-view-all { align-self: flex-start; }
-        }
+     @media (max-width: 560px) {
+  .lac-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .lac-card-from-left  { transform: translate(-14px, 10px); }
+  .lac-card-from-right { transform: translate(14px, 10px); }
+  .lac-body { padding: 10px 11px 12px; }
+  .lac-cat { font-size: 9px; padding: 2px 7px; margin-bottom: 6px; }
+  .lac-title { font-size: 12.5px; margin-bottom: 9px; -webkit-line-clamp: 2; }
+  .lac-meta { padding-top: 8px; margin-bottom: 9px; }
+  .lac-price-lbl { font-size: 8.5px; }
+  .lac-price { font-size: 15px; }
+  .lac-currency { font-size: 10px; }
+  .lac-time, .lac-time-urgent { font-size: 10px; }
+  .lac-cta-btn { padding: 8px 10px; font-size: 11.5px; border-radius: 7px; }
+  .lac-live-badge { font-size: 8.5px; padding: 3px 8px; top: 7px; left: 7px; }
+}
         @media (prefers-reduced-motion: reduce) {
           .lac-card, .lac-header { transition: none !important; opacity: 1 !important; transform: none !important; }
           .lac-pulse, .lac-eyebrow-dot { animation: none; }
