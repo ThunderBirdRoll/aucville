@@ -145,10 +145,6 @@ function Pagination({ page, totalPages, onChange }) {
   );
 }
 
-/* ─────────────────────────────────────────
-   Inner component — reads useSearchParams
-   Must be wrapped in <Suspense> by parent
-───────────────────────────────────────── */
 function AuctionsInner() {
   const searchParams = useSearchParams();
 
@@ -197,7 +193,6 @@ function AuctionsInner() {
   return (
     <div className="ap-wrap">
 
-      {/* header */}
       <div className={`anim ${visible ? "go d1" : ""}`}>
         <div className="ap-eyebrow">Marketplace</div>
         <h1 className="ap-h1">Live <b>auctions</b></h1>
@@ -208,21 +203,29 @@ function AuctionsInner() {
       <div className={`anim ${visible ? "go d2" : ""}`}>
         <div className="stats">
           <div className="stat">
-            <div className="stat-val">{loading ? "—" : stats.liveCount.toLocaleString()}</div>
-            <div className="stat-lbl">Live auctions</div>
+            <div className="stat-icon">🟢</div>
+            <div>
+              <div className="stat-val">{loading ? "—" : stats.liveCount.toLocaleString()}</div>
+              <div className="stat-lbl">Live auctions</div>
+            </div>
           </div>
           <div className="stat">
-            <div className="stat-val">{loading ? "—" : stats.categoryCount}</div>
-            <div className="stat-lbl">Categories</div>
+            <div className="stat-icon">🏷️</div>
+            <div>
+              <div className="stat-val">{loading ? "—" : stats.categoryCount}</div>
+              <div className="stat-lbl">Categories</div>
+            </div>
           </div>
           <div className="stat">
-            <div className="stat-val">{loading ? "—" : `$${stats.avgPrice.toLocaleString()}`}</div>
-            <div className="stat-lbl">Avg price</div>
+            <div className="stat-icon">💰</div>
+            <div>
+              <div className="stat-val">{loading ? "—" : `$${stats.avgPrice.toLocaleString()}`}</div>
+              <div className="stat-lbl">Avg price</div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* filter bar */}
       <div className={`anim ${visible ? "go d3" : ""}`}>
         <div className="fbar">
           <div className="sbox">
@@ -257,7 +260,6 @@ function AuctionsInner() {
         </div>
       </div>
 
-      {/* error */}
       {error && (
         <div className="err-banner">
           <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -267,7 +269,6 @@ function AuctionsInner() {
         </div>
       )}
 
-      {/* result count */}
       {!loading && !error && (
         <div className={`result-meta anim ${visible ? "go d4" : ""}`}>
           {pagination.total === 0
@@ -277,14 +278,12 @@ function AuctionsInner() {
         </div>
       )}
 
-      {/* skeletons */}
       {loading && (
         <div className="grid">
           {Array.from({ length: 12 }).map((_, i) => <SkeletonCard key={i} />)}
         </div>
       )}
 
-      {/* live section */}
       {!loading && live.length > 0 && (
         <>
           <div className="sec-hdr">
@@ -298,7 +297,6 @@ function AuctionsInner() {
         </>
       )}
 
-      {/* ended section */}
       {!loading && ended.length > 0 && (
         <>
           <div className="sec-hdr" style={{ marginTop: live.length ? 12 : 0 }}>
@@ -312,7 +310,6 @@ function AuctionsInner() {
         </>
       )}
 
-      {/* empty */}
       {!loading && !error && auctions.length === 0 && (
         <div className="empty">
           <svg width="44" height="44" fill="none" stroke="#374151" strokeWidth="1.5" viewBox="0 0 24 24">
@@ -323,7 +320,6 @@ function AuctionsInner() {
         </div>
       )}
 
-      {/* pagination */}
       {!loading && pagination.totalPages > 1 && (
         <Pagination
           page={pagination.page}
@@ -335,9 +331,6 @@ function AuctionsInner() {
   );
 }
 
-/* ─────────────────────────────────────────
-   Page shell — owns the <Suspense> boundary
-───────────────────────────────────────── */
 export default function AuctionsPage() {
   return (
     <>
@@ -386,9 +379,9 @@ export default function AuctionsPage() {
         .anim.go.d3 { animation-delay:.23s; }
         .anim.go.d4 { animation-delay:.32s; }
 
-        @keyframes fadeUp {
-          from { opacity:0; transform:translateY(12px); }
-          to   { opacity:1; transform:translateY(0); }
+        @keyframes fadeInRight {
+          from { opacity:0; transform:translateX(32px); }
+          to   { opacity:1; transform:translateX(0); }
         }
 
         .ap-wrap {
@@ -408,15 +401,26 @@ export default function AuctionsPage() {
         .ap-h1 b { font-weight:700; color:#2D6A4F; }
         .ap-sub { font-size:15px; color:#1F2937; font-weight:400; margin-bottom:32px; }
 
+        /* ── Stats: desktop ── */
         .stats {
-          display:flex; border:0.5px solid #E5E7EB; border-radius:14px;
-          overflow:hidden; margin-bottom:24px;
-          background:rgba(255,255,255,0.84); backdrop-filter:blur(8px);
+          display:flex;
+          gap:12px;
+          margin-bottom:24px;
         }
-        .stat { flex:1; padding:16px 20px; border-right:0.5px solid #E5E7EB; }
-        .stat:last-child { border-right:none; }
-        .stat-val { font-size:clamp(17px,2.2vw,24px); font-weight:300; color:#1B3A2D; letter-spacing:-0.3px; }
-        .stat-lbl { font-size:10px; color:#374151; margin-top:3px; letter-spacing:0.3px; text-transform:uppercase; }
+        .stat {
+          flex:1;
+          display:flex;
+          align-items:center;
+          gap:12px;
+          background:rgba(255,255,255,0.9);
+          border:0.5px solid #E5E7EB;
+          border-radius:14px;
+          padding:16px 18px;
+          backdrop-filter:blur(8px);
+        }
+        .stat-icon { font-size:20px; line-height:1; flex-shrink:0; }
+        .stat-val  { font-size:clamp(17px,2vw,22px); font-weight:300; color:#1B3A2D; letter-spacing:-0.3px; line-height:1.1; }
+        .stat-lbl  { font-size:10px; color:#6B7280; margin-top:3px; letter-spacing:0.3px; text-transform:uppercase; }
 
         .fbar { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:28px; align-items:center; }
 
@@ -436,7 +440,6 @@ export default function AuctionsPage() {
         }
         .sinput::placeholder { color:#4B5563; }
         .s-clear { background:none; border:none; cursor:pointer; color:#374151; display:flex; padding:0; }
-        .s-clear:hover { color:#374151; }
 
         .csel-wrap { position:relative; flex-shrink:0; }
         .csel {
@@ -473,7 +476,7 @@ export default function AuctionsPage() {
           overflow:hidden; cursor:pointer;
           transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
           backdrop-filter:blur(6px);
-          animation:fadeUp .4s ease forwards;
+          animation:fadeInRight .45s cubic-bezier(.22,.68,0,1.15) forwards;
           opacity:0;
         }
         .ac:hover {
@@ -562,13 +565,35 @@ export default function AuctionsPage() {
         .pg-active { background:#1B3A2D !important; color:#D8F0E6 !important; border-color:#1B3A2D !important; font-weight:400; }
         .pg-ellipsis { font-size:13px; color:#374151; padding:0 4px; }
 
+        /* ── Mobile ── */
         @media (max-width:640px) {
-          .stats { flex-direction:column; }
-          .stat  { border-right:none; border-bottom:0.5px solid #E5E7EB; }
-          .stat:last-child { border-bottom:none; }
+          /* stats: 3 compact pill cards in a row */
+          .stats {
+            gap:8px;
+            margin-bottom:18px;
+          }
+          .stat {
+            flex-direction:column;
+            align-items:flex-start;
+            gap:4px;
+            padding:12px 12px;
+            border-radius:12px;
+          }
+          .stat-icon { font-size:16px; }
+          .stat-val  { font-size:16px; }
+          .stat-lbl  { font-size:8.5px; }
+
           .fbar  { flex-direction:column; }
           .sbox, .csel { width:100%; }
+          .grid  { grid-template-columns:repeat(2, 1fr); gap:10px; }
+          .ac-title  { font-size:13px; margin-bottom:8px; }
+          .ac-price  { font-size:15px; }
+          .ac-btn    { font-size:11px; padding:8px 10px; }
+          .ac-body   { padding:10px 12px 12px; }
+          .ac-cat    { font-size:9px; padding:2px 7px; }
+          .ac-badge  { font-size:9.5px; padding:2px 7px; }
         }
+
         @media (prefers-reduced-motion:reduce) {
           .anim,.ac { opacity:1; animation:none !important; }
           .accent-bar,.ac-dot { animation:none; }
@@ -579,12 +604,6 @@ export default function AuctionsPage() {
         <Navbar />
         <div className="ap-bg"><div className="ap-bg-g" /></div>
         <div className="accent-bar" />
-
-        {/*
-          Suspense boundary required by Next.js App Router
-          whenever useSearchParams() is used inside a client component.
-          The fallback renders skeleton cards so there's no layout shift.
-        */}
         <Suspense
           fallback={
             <div className="ap-wrap">

@@ -171,7 +171,7 @@ export async function POST(req) {
 
         // UPDATE ORDER IN DB — store the label so it can be re-fetched later
         await Order.findByIdAndUpdate(orderId, {
-            status: "shipped",
+            status: "labelled",
             trackingNumber,
             labelBase64,
         },

@@ -60,7 +60,7 @@ export default function AddressPage() {
       }
     }
     load();
-  }, [session]);
+  }, []);
 
   function set(key) {
     return e => {

@@ -12,8 +12,88 @@ import {
 
 const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 const CLOUDINARY_UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
-const CATEGORIES = ["Electronics", "Fashion", "Home & Living", "Real Estate", "Vehicles"];
+const CATEGORIES = [
+  "Electronics",
+  "Mobile Phones",
+  "Laptops & Computers",
+  "Gaming",
+  "Video Games",
+  "Cameras",
+  "Audio & Headphones",
+  "Smart Watches",
 
+  "Fashion",
+  "Men Clothing",
+  "Women Clothing",
+  "Shoes",
+  "Sneakers",
+  "Bags",
+  "Sunglasses",
+
+  "Luxury",
+  "Watches",
+  "Jewelry",
+  "Gold & Diamonds",
+  "Designer Brands",
+
+  "Vehicles",
+  "Cars",
+  "Motorcycles",
+  "Bicycles",
+  "Auto Parts",
+  "Electric Vehicles",
+
+  "Home & Living",
+  "Furniture",
+  "Kitchen Appliances",
+  "Home Decor",
+  "Lighting",
+  "Garden & Outdoor",
+
+  "Real Estate",
+  "Apartments",
+  "Houses",
+  "Commercial Property",
+  "Land & Plots",
+
+  "Collectibles",
+  "Antiques",
+  "Coins",
+  "Trading Cards",
+  "Rare Items",
+  "Memorabilia",
+
+  "Sports & Outdoor",
+  "Gym Equipment",
+  "Sports Gear",
+  "Camping Equipment",
+  "Fitness Accessories",
+
+  "Beauty & Personal Care",
+  "Perfumes",
+  "Skincare",
+  "Makeup",
+  "Hair Products",
+
+  "Books",
+  "Art",
+  "Musical Instruments",
+  "Office Equipment",
+  "Baby Products",
+  "Pet Supplies",
+  "Toys",
+  "Health & Wellness",
+
+  "Industrial Equipment",
+  "Construction Tools",
+  "Machinery",
+  "Agriculture Equipment",
+
+  "NFT & Digital Assets",
+  "Domain Names",
+  "Collectible Cards",
+  "Limited Edition Products"
+];
 // ── Blocker modal ──────────────────────────────────────────────────────────────
 function BlockerModal({ reason, onLogin, onAddAddress }) {
     return (

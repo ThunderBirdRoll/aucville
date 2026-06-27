@@ -25,11 +25,11 @@ const userSchema = new mongoose.Schema(
      state: String,
      zip: String,
      country: String      
-    }
-    ,
-      contact:{
- type: String
-      }
+    },
+    stripeAccountId: {
+      type: String
+    },
+    stripeOnboardingDone: { type: Boolean, default: false },
 },
 {
     timestamps: true,

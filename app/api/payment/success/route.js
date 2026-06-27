@@ -33,7 +33,9 @@ export async function POST(req) {
     }
 
     // ── Idempotency guard ──
-    if (order.status === "paid" || order.status === "shipped") {
+    // If this order was already marked paid/shipped (e.g. webhook + client both
+    // fired, or the user double-submitted), don't re-ship or re-email.
+    if (order.status === "paid") {
       return Response.json({
         success: true,
         message: "Order already processed",
@@ -44,6 +46,7 @@ export async function POST(req) {
     // Update order status
     order.status = "paid";
     await order.save();
+    console.log("done paid order")
 
     // Get buyer + seller + auction
     const buyer = await User.findById(order.receiverId);
@@ -64,28 +67,25 @@ export async function POST(req) {
       });
       const shipData = await shipRes.json().catch(() => ({}));
 
+      console.log("shipp", shipData);
+
       if (!shipRes.ok || !shipData.success) {
         throw new Error(shipData.error || "FedEx shipment creation failed");
       }
 
-      shipment = shipData;
+      shipment = shipData; // { trackingNumber, labelBase64, sender, receiver, serviceType, shipDate }
 
+      // NOTE: /api/fedex/ship already persists status:"shipped", trackingNumber,
+      // and labelBase64 on the order via its own findByIdAndUpdate — don't
+      // duplicate that DB write here, just mirror it locally for the emails below.
       order.trackingNumber = shipment.trackingNumber;
-      order.status = "shipped";
+      order.status = "labelled";
     } catch (err) {
       shipError = err.message || "Could not create shipment";
       console.error("FedEx ship error:", shipError);
+      // We deliberately do NOT throw here — payment already succeeded.
+      // The order stays at status "paid" so it can be retried/shipped manually.
     }
-
-    // DEBUG: log exactly what we got back from the ship step, before building emails
-    console.log("DEBUG shipment object:", {
-      hasShipment: !!shipment,
-      shipError,
-      hasLabelBase64: !!shipment?.labelBase64,
-      labelBase64Type: typeof shipment?.labelBase64,
-      labelBase64Length: shipment?.labelBase64?.length,
-      labelBase64First30: shipment?.labelBase64?.slice(0, 30),
-    });
 
     /*
       EMAIL TO BUYER
@@ -93,82 +93,192 @@ export async function POST(req) {
 
     await sendEmail({
       to: buyer.email,
-      subject: "Purchase Confirmation",
+      subject: "Your Purchase is Confirmed 🎉",
       html: `
-        <div style="font-family: Arial, sans-serif; line-height:1.6">
-          <h2>Payment Successful ✅</h2>
-          <p>Hello ${buyer.name || "Customer"},</p>
-          <p>Thank you for your purchase.</p>
-          <p>Your payment has been successfully received for the item:</p>
-          <div style="padding:12px; background:#f5f5f5; border-radius:8px;">
-            <strong>Item:</strong> ${itemTitle}<br/>
-            <strong>Amount Paid:</strong> $${order.amount}<br/>
-            <strong>Order ID:</strong> ${order._id}
-            ${shipment ? `<br/><strong>Tracking Number:</strong> ${shipment.trackingNumber}` : ""}
-          </div>
-          <p>${shipment
-            ? "Your order has shipped and is on its way."
-            : "The seller will now prepare shipment for your order."}</p>
-          <p>Thank you for using our marketplace.</p>
-          <br/>
-          <p>Best Regards,<br/>Marketplace Team</p>
-        </div>
-      `,
-    });
+    <div style="font-family: Arial, Helvetica, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f4f4f7; padding: 24px;">
+      <div style="background-color: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb;">
 
+        <div style="background-color: #4d148c; padding: 20px 24px;">
+          <h1 style="color: #ffffff; font-size: 20px; margin: 0;">Aucville</h1>
+        </div>
+
+        <div style="padding: 24px;">
+          <h2 style="color: #111827; font-size: 18px; margin-top: 0;">Payment Successful ✅</h2>
+
+          <p style="color: #374151; font-size: 15px; line-height: 1.6;">
+            Hi ${buyer.name || "there"},
+          </p>
+
+          <p style="color: #374151; font-size: 15px; line-height: 1.6;">
+            Thank you for your purchase! We've successfully received your payment.
+            Here are your order details:
+          </p>
+
+          <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px;">
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280; width: 40%;">Item</td>
+              <td style="padding: 8px 0; color: #111827; font-weight: 600;">${itemTitle}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280;">Amount Paid</td>
+              <td style="padding: 8px 0; color: #111827; font-weight: 600;">$${order.amount}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280;">Order ID</td>
+              <td style="padding: 8px 0; color: #111827; font-weight: 600;">${order._id}</td>
+            </tr>
+            ${shipment ? `
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280;">Tracking Number</td>
+              <td style="padding: 8px 0; color: #111827; font-weight: 600;">${shipment.trackingNumber}</td>
+            </tr>` : ""}
+          </table>
+
+          <div style="background-color: ${shipment ? "#ecfdf5" : "#fff7e6"}; border-left: 4px solid ${shipment ? "#10b981" : "#f59e0b"}; padding: 12px 16px; border-radius: 4px; margin: 20px 0;">
+            <p style="margin: 0; color: ${shipment ? "#065f46" : "#92400e"}; font-size: 14px;">
+              ${shipment
+          ? "📦 Your order has shipped and is on its way!"
+          : "⏳ The seller has been notified and will prepare your shipment shortly."}
+            </p>
+          </div>
+
+          <p style="color: #374151; font-size: 15px; line-height: 1.6;">
+            Thank you for shopping with Aucville!
+          </p>
+        </div>
+
+        <div style="background-color: #f9fafb; padding: 16px 24px; text-align: center;">
+          <p style="color: #9ca3af; font-size: 12px; margin: 0;">
+            This is an automated message from Aucville. Please don't reply directly to this email.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  `,
+    });
     /*
       EMAIL TO SELLER (with shipping label PDF attached, if shipment succeeded)
     */
 
+    /*
+   EMAIL TO SELLER (with shipping label PDF attached, if shipment succeeded)
+ */
+
     const sellerEmailPayload = {
       to: seller.email,
-      subject: shipment ? "Item Sold — Shipping Label Attached" : "Your Item Has Been Sold",
+      subject: shipment ? "Item Sold — Shipping Label Attached 📦" : "Your Item Has Been Sold 🎉",
       html: `
-        <div style="font-family: Arial, sans-serif; line-height:1.6">
-          <h2>Congratulations 🎉</h2>
-          <p>Hello ${seller.name || "Seller"},</p>
-          <p>Good news — your auction listing has been purchased successfully.</p>
-          <div style="padding:12px; background:#f5f5f5; border-radius:8px;">
-            <strong>Item Sold:</strong> ${itemTitle}<br/>
-            <strong>Sale Amount:</strong> $${order.amount}<br/>
-            <strong>Order ID:</strong> ${order._id}
-            ${shipment ? `<br/><strong>Tracking Number:</strong> ${shipment.trackingNumber}` : ""}
-          </div>
-          ${shipment
-            ? `<p>Your FedEx shipping label is attached as a PDF. Print it, attach it to the package, and drop it off or schedule a pickup.</p>`
-            : `<p>Please prepare the item for shipment and update the order once dispatched. (Note: automatic label generation failed — please create the label manually or contact support.)</p>`
-          }
-          <p>The buyer has completed payment successfully.</p>
-          <br/>
-          <p>Best Regards,<br/>Marketplace Team</p>
+    <div style="font-family: Arial, Helvetica, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f4f4f7; padding: 24px;">
+      <div style="background-color: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb;">
+
+        <div style="background-color: #4d148c; padding: 20px 24px;">
+          <h1 style="color: #ffffff; font-size: 20px; margin: 0;">Aucville</h1>
         </div>
-      `,
+
+        <div style="padding: 24px;">
+          <h2 style="color: #111827; font-size: 18px; margin-top: 0;">Congratulations 🎉</h2>
+
+          <p style="color: #374151; font-size: 15px; line-height: 1.6;">
+            Hi ${seller.name || "there"},
+          </p>
+
+          <p style="color: #374151; font-size: 15px; line-height: 1.6;">
+            Good news — your auction listing has been purchased successfully.
+            Here are the order details:
+          </p>
+
+          <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px;">
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280; width: 40%;">Item Sold</td>
+              <td style="padding: 8px 0; color: #111827; font-weight: 600;">${itemTitle}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280;">Sale Amount</td>
+              <td style="padding: 8px 0; color: #111827; font-weight: 600;">$${order.amount}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280;">Order ID</td>
+              <td style="padding: 8px 0; color: #111827; font-weight: 600;">${order._id}</td>
+            </tr>
+            ${shipment ? `
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280;">Tracking Number</td>
+              <td style="padding: 8px 0; color: #111827; font-weight: 600;">${shipment.trackingNumber}</td>
+            </tr>` : ""}
+          </table>
+
+          <div style="background-color: ${shipment ? "#ecfdf5" : "#fff7e6"}; border-left: 4px solid ${shipment ? "#10b981" : "#f59e0b"}; padding: 12px 16px; border-radius: 4px; margin: 20px 0;">
+            <p style="margin: 0; color: ${shipment ? "#065f46" : "#92400e"}; font-size: 14px;">
+              ${shipment
+          ? "📎 Your FedEx shipping label is attached as a PDF. Print it, attach it to the package, and drop it off or schedule a pickup."
+          : "⚠️ Automatic label generation failed. Please create the shipping label manually or contact support, then update the order once dispatched."}
+            </p>
+          </div>
+
+          <p style="color: #374151; font-size: 15px; line-height: 1.6;">
+            The buyer has completed payment successfully — thanks for selling with Aucville!
+          </p>
+        </div>
+
+        <div style="background-color: #f9fafb; padding: 16px 24px; text-align: center;">
+          <p style="color: #9ca3af; font-size: 12px; margin: 0;">
+            This is an automated message from Aucville. Please don't reply directly to this email.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  `,
     };
 
+
+
+
+
     if (shipment?.labelBase64) {
-      const labelBuffer = Buffer.from(shipment.labelBase64, "base64");
-
-      // DEBUG: verify the decoded buffer actually looks like a real PDF
-      console.log("DEBUG label buffer:", {
-        bufferByteLength: labelBuffer.length,
-        first5BytesAsString: labelBuffer.slice(0, 5).toString(),
-        looksLikeRealPDF: labelBuffer.slice(0, 5).toString() === "%PDF-",
-      });
-
       sellerEmailPayload.attachments = [
         {
           filename: `shipping-label-${shipment.trackingNumber}.pdf`,
-          content: labelBuffer,
+          content: Buffer.from(shipment.labelBase64, "base64"),
           contentType: "application/pdf",
         },
       ];
-    } else {
-      console.log("DEBUG: no labelBase64 present, skipping attachment entirely");
     }
 
-    console.log("DEBUG: sellerEmailPayload has attachments?", !!sellerEmailPayload.attachments);
-
     await sendEmail(sellerEmailPayload);
+
+  try {
+  const pickupRes = await fetch(
+    `${process.env.NEXT_PUBLIC_BASE_URL}/api/fedex/pickup`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderId }),
+    }
+  );
+
+ 
+
+  const pickupData = await pickupRes.json();
+
+  console.log("Pickup Response:", pickupData);
+
+  if (!pickupData.success) {
+    throw new Error(
+      pickupData.error || "FedEx pickup creation failed"
+    );
+  }
+
+  return pickupData;
+} catch (error) {
+  console.error("FedEx Pickup Error:", error);
+
+  throw new Error(
+    error.message || "FedEx pickup creation failed"
+  );
+}
+
 
     return Response.json({
       success: true,

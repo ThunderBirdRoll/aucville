@@ -15,7 +15,7 @@ const stripePromise = STRIPE_PUBLIC_KEY ? loadStripe(STRIPE_PUBLIC_KEY) : null;
 
 const STATUS_META = {
   pending_payment: { label: "Awaiting Payment", color: "#d97706", bg: "rgba(251,191,36,0.12)", dot: "#f59e0b" },
-  pending:         { label: "Confirmed",         color: "#1a7a48", bg: "rgba(26,122,72,0.10)",  dot: "#1a7a48" },
+  paid:         { label: "Confirmed",         color: "#1a7a48", bg: "rgba(26,122,72,0.10)",  dot: "#1a7a48" },
   shipped:         { label: "Shipped",           color: "#0369a1", bg: "rgba(14,165,233,0.10)", dot: "#0ea5e9" },
   delivered:       { label: "Delivered",         color: "#0f4527", bg: "rgba(15,69,39,0.10)",   dot: "#145c35" },
   cancelled:       { label: "Cancelled",         color: "#dc2626", bg: "rgba(220,38,38,0.08)",  dot: "#ef4444" },

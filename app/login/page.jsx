@@ -70,12 +70,19 @@ export default function LoginPage() {
 
   return (
     <>
-      <Navbar />
-
-      <div className="login-page">
+     
+<div className="w-screen h-screen">
+       <Navbar />
+        <div className="login-page">
+  
         <style>{`
+          * {
+            box-sizing: border-box;
+          }
+
           .login-page {
-            min-height: 100vh;
+            min-height: calc(100vh - 64px);
+            width: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -83,6 +90,7 @@ export default function LoginPage() {
             font-family: 'DM Sans', sans-serif;
             position: relative;
             overflow: hidden;
+            padding: 24px 16px;
           }
 
           .bg-glow {
@@ -93,37 +101,40 @@ export default function LoginPage() {
             top: -250px;
             right: -250px;
             filter: blur(30px);
+            pointer-events: none;
           }
 
           .card {
             width: 100%;
-            max-width: 440px;
+            max-width: 380px;
             background: rgba(255,255,255,0.95);
             border: 1px solid rgba(181,212,195,0.7);
-            border-radius: 18px;
-            padding: 32px;
+            border-radius: 16px;
+            padding: 24px;
             box-shadow: 0 20px 50px rgba(0,0,0,0.08);
             backdrop-filter: blur(12px);
+            position: relative;
+            z-index: 1;
           }
 
           .title {
-            font-size: 28px;
+            font-size: 22px;
             font-weight: 800;
             color: #0a1f14;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
           }
 
           .subtitle {
-            font-size: 13px;
+            font-size: 12.5px;
             color: rgba(0,0,0,0.65);
-            margin-bottom: 24px;
+            margin-bottom: 18px;
           }
 
           .input {
             width: 100%;
-            padding: 13px 14px;
-            margin-bottom: 12px;
-            border-radius: 12px;
+            padding: 11px 13px;
+            margin-bottom: 10px;
+            border-radius: 10px;
             border: 1.5px solid #cfe7da;
             outline: none;
             font-size: 14px;
@@ -143,14 +154,15 @@ export default function LoginPage() {
 
           .btn {
             width: 100%;
-            padding: 13px;
+            padding: 12px;
             border: none;
-            border-radius: 12px;
+            border-radius: 10px;
             background: linear-gradient(135deg, #145c35, #1a7a48);
             color: white;
             font-weight: 700;
+            font-size: 14px;
             cursor: pointer;
-            margin-top: 6px;
+            margin-top: 4px;
             transition: all 0.2s ease;
           }
 
@@ -161,14 +173,16 @@ export default function LoginPage() {
 
           .btn:disabled {
             opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
           }
 
           .divider {
             display: flex;
             align-items: center;
             gap: 10px;
-            margin: 18px 0;
-            font-size: 12px;
+            margin: 16px 0;
+            font-size: 11.5px;
             color: rgba(0,0,0,0.55);
           }
 
@@ -182,8 +196,8 @@ export default function LoginPage() {
 
           .google-btn {
             width: 100%;
-            padding: 12px;
-            border-radius: 12px;
+            padding: 11px;
+            border-radius: 10px;
             border: 1px solid #d6e6dd;
             background: #fff;
             cursor: pointer;
@@ -192,7 +206,7 @@ export default function LoginPage() {
             align-items: center;
             justify-content: center;
             gap: 10px;
-            font-size: 14px;
+            font-size: 13.5px;
             color: #000;
           }
 
@@ -203,18 +217,45 @@ export default function LoginPage() {
 
           .footer {
             text-align: center;
-            margin-top: 16px;
+            margin-top: 14px;
             font-size: 12px;
             color: rgba(0,0,0,0.6);
           }
 
           .footer span {
-            color: #000;
+            color: #1a7a48;
             font-weight: 700;
             cursor: pointer;
           }
-        `}</style>
 
+          /* Small phones */
+          @media (max-width: 380px) {
+            .card {
+              padding: 18px;
+              border-radius: 14px;
+            }
+
+            .title {
+              font-size: 19px;
+            }
+
+            .bg-glow {
+              width: 480px;
+              height: 480px;
+              top: -180px;
+              right: -180px;
+            }
+          }
+
+          /* Larger screens: a touch roomier, still compact */
+          @media (min-width: 768px) {
+            .card {
+              max-width: 400px;
+              padding: 28px;
+            }
+          }
+        `}</style>
+       
         <div className="bg-glow" />
 
         <form className="card" onSubmit={handleLogin}>
@@ -244,13 +285,15 @@ export default function LoginPage() {
           <GoogleButton label="Continue with Google" />
 
           <div className="footer">
-            Don’t have an account?{" "}
+            Don't have an account?{" "}
             <span onClick={() => router.push("/signup")}>Sign up</span>
           </div>
         </form>
       </div>
 
+</div>
       <Footer />
+     
     </>
   );
 }

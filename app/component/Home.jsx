@@ -12,10 +12,10 @@ const PLACEHOLDERS = [
 
 // ── Card stack data ──
 const LOTS = [
-  { lotNo: "0148", item: "Vintage Leica M6, Black Paint", bid: "$2,140", bidders: "14", closes: "06:12", stub: "4471-A" },
-  { lotNo: "0149", item: "Mid-Century Walnut Sideboard", bid: "$980", bidders: "9", closes: "11:47", stub: "4471-B" },
-  { lotNo: "0150", item: "Rolex Datejust, Steel & Gold", bid: "$6,400", bidders: "27", closes: "02:35", stub: "4471-C" },
-  { lotNo: "0151", item: "1967 Gibson SG Standard", bid: "$3,250", bidders: "18", closes: "19:02", stub: "4471-D" },
+  { lotNo: "0148", item: "Vintage Leica M6, Black Paint", bid: "$2,140", bidders: "14", closes: "06:12 am", stub: "4471-A" },
+  { lotNo: "0149", item: "Mid-Century Walnut Sideboard", bid: "$980", bidders: "9", closes: "11:47 pm", stub: "4471-B" },
+  { lotNo: "0150", item: "Rolex Datejust, Steel & Gold", bid: "$6,400", bidders: "27", closes: "02:35 pm", stub: "4471-C" },
+  { lotNo: "0151", item: "1967 Gibson SG Standard", bid: "$3,250", bidders: "18", closes: "19:02 am", stub: "4471-D" },
 ];
 
 // fixed alternating tilt per stack position — hand-dealt look, not random-per-render
@@ -499,7 +499,7 @@ export default function Hero() {
               animate={visible ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.55, delay: 0.05 }}
             >
-              <span className="lot-no">No. 0148</span>
+             
               <span className="lot-sep" />
               <span className="lot-text"><span className="live-dot" />Auction floor open now</span>
             </motion.div>

@@ -84,7 +84,7 @@ export default function AuctionDetailPage() {
   useEffect(() => { fetchAuction(); }, [fetchAuction]);
 
   // ── Derive user-specific state from session + auction ──────────────────────
-  const userId = session?.user?._id ?? session?.user?.id ?? null;
+  const userId = session?.user?.id ?? session?.user?._id ?? null;
 
   // Find the user's highest bid in the bids array
   const myLastBid = auction?.bids

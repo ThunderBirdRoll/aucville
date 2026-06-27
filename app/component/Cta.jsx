@@ -359,7 +359,6 @@ export default function CreateAuctionCTA() {
     animate={vis ? { opacity: 1, y: 0 } : {}}
     transition={{ duration: 0.55, ease: [0.22, 0.68, 0, 1.1] }}
 >
-    <div className="cs-tag">Sell on BidFlow</div>
 
     <h2 className="cs-h2">
         List today.<br />

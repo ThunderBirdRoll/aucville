@@ -1,4 +1,3 @@
-// app/api/orders/mine/route.js
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/route";
 import { connectDB } from "../../../lib/db";
