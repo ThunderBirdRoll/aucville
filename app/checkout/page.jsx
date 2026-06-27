@@ -1,5 +1,5 @@
 "use client";
-
+export const dynamic = "force-dynamic";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Elements } from "@stripe/react-stripe-js";
@@ -476,10 +476,36 @@ function LoadingSkeleton() {
   );
 }
 
+function GlobalStyles() {
+  return (
+    <style>{`
+      @keyframes shimmer {
+        0%   { background-position: -600px 0; }
+        100% { background-position: 600px 0; }
+      }
+      .skel {
+        background: linear-gradient(90deg, #eef7f2 25%, #dff0e8 50%, #eef7f2 75%);
+        background-size: 600px 100%;
+        animation: shimmer 1.4s infinite linear;
+        border-radius: 8px;
+      }
+      .co-card {
+        background: #fff;
+        border: 1px solid rgba(181,212,195,0.55);
+        border-radius: 16px;
+        overflow: hidden;
+      }
+    `}</style>
+  );
+}
+
 export default function CheckoutPage() {
   return (
-    <Suspense fallback={<LoadingSkeleton />}>
-      <CheckoutPageInner />
-    </Suspense>
+    <>
+      <GlobalStyles />
+      <Suspense fallback={<LoadingSkeleton />}>
+        <CheckoutPageInner />
+      </Suspense>
+    </>
   );
 }
