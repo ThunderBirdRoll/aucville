@@ -226,30 +226,82 @@ export default function CreateAuction() {
         checkAddress();
     }, [session, status]);
 
-    // ── Cloudinary upload ────────────────────────────────────────────────────
+    // ── Image upload ─────────────────────────────────────────────────────────
     async function uploadToCloudinary(file) {
-        if (!file) return;
-        if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) { setUploadErr("Cloudinary config is missing"); return; }
-        if (!file.type.startsWith("image/")) { setUploadErr("Only image files are allowed"); return; }
-        if (file.size > 10 * 1024 * 1024) { setUploadErr("File size must be under 10MB"); return; }
+    console.log("[uploadToCloudinary] called with file:", file);
 
-        setUploading(true); setUploadErr("");
-        try {
-            const fd = new FormData();
-            fd.append("file", file);
-            fd.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, { method: "POST", body: fd });
-            const data = await res.json();
-            if (!res.ok || data.error) throw new Error(data.error?.message || "Upload failed");
-            if (!data.secure_url) throw new Error("No image URL returned from Cloudinary");
-            setForm(f => ({ ...f, imageUrl: data.secure_url }));
-            setPreview(data.secure_url);
-        } catch (err) {
-            setUploadErr(err.message || "Network error during upload");
-        } finally {
-            setUploading(false);
-        }
+    if (!file) {
+        console.log("[uploadToCloudinary] no file provided, aborting");
+        return;
     }
+
+    if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
+        console.error("[uploadToCloudinary] missing config", {
+            CLOUDINARY_CLOUD_NAME,
+            CLOUDINARY_UPLOAD_PRESET,
+        });
+        setUploadErr("Cloudinary config is missing");
+        return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+        console.warn("[uploadToCloudinary] rejected non-image file type:", file.type);
+        setUploadErr("Only image files are allowed");
+        return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+        console.warn("[uploadToCloudinary] file too large:", file.size, "bytes");
+        setUploadErr("File size must be under 10MB");
+        return;
+    }
+
+    console.log("[uploadToCloudinary] starting upload...", {
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        cloudName: CLOUDINARY_CLOUD_NAME,
+        preset: CLOUDINARY_UPLOAD_PRESET,
+    });
+
+    setUploading(true);
+    setUploadErr("");
+
+    try {
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+
+        const url = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
+        console.log("[uploadToCloudinary] POSTing to:", url);
+
+        const res = await fetch(url, { method: "POST", body: fd });
+        console.log("[uploadToCloudinary] response status:", res.status, res.ok);
+
+        const data = await res.json();
+        console.log("[uploadToCloudinary] response body:", data);
+
+        if (!res.ok || data.error) {
+            console.error("[uploadToCloudinary] upload failed:", data.error);
+            throw new Error(data.error?.message || "Upload failed");
+        }
+
+        if (!data.secure_url) {
+            console.error("[uploadToCloudinary] no secure_url in response:", data);
+            throw new Error("No image URL returned from Cloudinary");
+        }
+
+        console.log("[uploadToCloudinary] success! secure_url:", data.secure_url);
+        setForm(f => ({ ...f, imageUrl: data.secure_url }));
+        setPreview(data.secure_url);
+    } catch (err) {
+        console.error("[uploadToCloudinary] caught error:", err);
+        setUploadErr(err.message || "Network error during upload");
+    } finally {
+        console.log("[uploadToCloudinary] finished, uploading = false");
+        setUploading(false);
+    }
+}
 
     function handleFile(file) {
         if (!file || !file.type.startsWith("image/")) { setUploadErr("Please select an image file."); return; }

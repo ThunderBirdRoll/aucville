@@ -61,6 +61,26 @@ function OrderCard({ order, role }) {
   const auction = order.auctionId;
   const isSender = role === "sender";
 
+  async function downloadLabel() {
+    try {
+      const res = await fetch(`/api/orders/${order._id}/label`);
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "Failed to download label");
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `shipping-label-${order._id}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert("Error downloading label");
+    }
+  }
+
   return (
     <div className="order-card">
       {/* ── Head ── */}
@@ -88,9 +108,9 @@ function OrderCard({ order, role }) {
 
       {/* ── Transaction info ── */}
       <div className="info-block">
-       
-        <InfoRow icon={Hash}       label="Tracking No."   value={order.trackingNumber}  mono />
-        <InfoRow icon={Package}    label="Order amount"   value={order.amount != null ? `$${order.amount.toLocaleString()}` : null} />
+
+        <InfoRow icon={Hash} label="Tracking No." value={order.trackingNumber} mono />
+        <InfoRow icon={Package} label="Order amount" value={order.amount != null ? `$${order.amount.toLocaleString()}` : null} />
         {order.shippingAmount != null && (
           <InfoRow icon={Truck} label="Shipping" value={`$${order.shippingAmount.toLocaleString()}`} />
         )}
@@ -116,11 +136,19 @@ function OrderCard({ order, role }) {
       </div>
 
       {/* ── Buyer notice ── */}
+      {isSender && order.hasLabel && (
+        <button className="download-label-btn" onClick={downloadLabel}>
+          <Package size={12} /> Download shipping label (PDF)
+        </button>
+      )}
       {!isSender && (
         <div className="order-locked">
           <Package size={12} /> This order is managed by the seller
         </div>
       )}
+
+
+
     </div>
   );
 }
@@ -129,12 +157,13 @@ export default function OrdersPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  const [sentOrders, setSentOrders]         = useState([]);
+
+  const [sentOrders, setSentOrders] = useState([]);
   const [receivedOrders, setReceivedOrders] = useState([]);
-  const [loading, setLoading]               = useState(true);
-  const [err, setErr]                       = useState("");
-  const [tab, setTab]                       = useState("sender");
-  const [visible, setVisible]               = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
+  const [tab, setTab] = useState("sender");
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -179,7 +208,16 @@ export default function OrdersPage() {
         .anim{opacity:0}
         .anim.go{animation:slideUp .48s cubic-bezier(.22,.68,0,1.15) forwards}
         .anim.go.d1{animation-delay:.05s}
-
+.download-label-btn {
+  display: flex; align-items: center; gap: 6px;
+  width: 100%; margin-top: 14px;
+  background: #1B3A2D; color: #fff; border: none;
+  border-radius: 10px; padding: 10px 16px;
+  font-size: 12.5px; font-weight: 400; font-family: inherit;
+  cursor: pointer; justify-content: center;
+  transition: background .15s;
+}
+.download-label-btn:hover { background: #2D6A4F; }
         .ord-wrap{position:relative;z-index:1;max-width:860px;margin:0 auto;padding:clamp(28px,5vw,52px) clamp(16px,4vw,40px) 80px}
         .ord-eyebrow{font-size:11px;font-weight:400;color:#52B788;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:6px}
         .ord-title{font-size:clamp(22px,3.5vw,34px);font-weight:400;color:#111827;letter-spacing:-0.4px;line-height:1.1;margin-bottom:28px}

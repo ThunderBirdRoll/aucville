@@ -13,15 +13,23 @@ export async function GET() {
   const user = await User.findOne({ email: session.user.email }).lean();
   if (!user) return Response.json({ error: "User not found" }, { status: 404 });
 
-  const sentOrders = await Order.find({ senderId: user._id })
+  const sentOrdersRaw = await Order.find({ senderId: user._id })
     .populate("auctionId", "title imageUrl")
     .sort({ createdAt: -1 })
     .lean();
 
-  const receivedOrders = await Order.find({ receiverId: user._id })
+  const receivedOrdersRaw = await Order.find({ receiverId: user._id })
     .populate("auctionId", "title imageUrl")
     .sort({ createdAt: -1 })
     .lean();
+
+  const stripLabel = (o) => {
+    const { labelBase64, ...rest } = o;
+    return { ...rest, hasLabel: !!labelBase64 };
+  };
+
+  const sentOrders = sentOrdersRaw.map(stripLabel);
+  const receivedOrders = receivedOrdersRaw.map(stripLabel);
 
   return Response.json({ sentOrders, receivedOrders });
 }

@@ -30,6 +30,7 @@ function PlaceOrderButton({ auction }) {
     try {
       const res = await fetch("/api/user/me");
       const data = await res.json();
+      console.log("data",data);
       const addr = data.address;
       const hasAddress = addr && (addr.addressline1 || addr.city);
       if (!hasAddress) {
