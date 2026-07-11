@@ -1,10 +1,11 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ComposableMap, Geographies, Geography, Marker } from "react-simple-maps";
+import { geoAlbersUsa, geoPath } from "d3-geo";
+import { feature } from "topojson-client";
 
 // Public US states topology (Census-derived, open data) served via jsDelivr CDN
-const US_STATES_TOPO_JSON = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
+const US_STATES_TOPO_JSON_URL = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
 
 // pin locations — [longitude, latitude] — roughly matching the reference spread
 const PINS = [
@@ -15,7 +16,55 @@ const PINS = [
   { name: "Texas", coords: [-97.74, 30.27] },        // Texas
 ];
 
+const MAP_WIDTH = 960;
+const MAP_HEIGHT = 600;
+
+function useUsMap() {
+  const [statePaths, setStatePaths] = useState([]);
+  const [pinPositions, setPinPositions] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      try {
+        const res = await fetch(US_STATES_TOPO_JSON_URL);
+        const topo = await res.json();
+        const geojson = feature(topo, topo.objects.states);
+
+        const projection = geoAlbersUsa()
+          .scale(1200)
+          .translate([MAP_WIDTH / 2, MAP_HEIGHT / 2]);
+        const path = geoPath(projection);
+
+        const paths = geojson.features.map((f) => ({
+          id: f.id,
+          d: path(f),
+        }));
+
+        const pins = PINS.map((pin) => {
+          const projected = projection(pin.coords);
+          return projected ? { ...pin, x: projected[0], y: projected[1] } : null;
+        }).filter(Boolean);
+
+        if (!cancelled) {
+          setStatePaths(paths);
+          setPinPositions(pins);
+        }
+      } catch (err) {
+        console.error("Failed to load US map data:", err);
+      }
+    }
+
+    load();
+    return () => { cancelled = true; };
+  }, []);
+
+  return { statePaths, pinPositions };
+}
+
 export default function Contact() {
+  const { statePaths, pinPositions } = useUsMap();
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", subject: "", message: "" });
   const [status, setStatus] = useState("idle"); // idle | sending | sent | error
   const [errorMsg, setErrorMsg] = useState("");
@@ -94,18 +143,14 @@ export default function Contact() {
         /* ── Map ── */
         .contact-map-wrap { width: 100%; }
         .contact-map-svg { width: 100%; height: auto; display: block; }
-
-        /* react-simple-maps state fills — same dark gray / blue theme as the rest of the section */
-        .rsm-geography {
+        .us-state-path {
           fill: #414751;
           stroke: #ffffff;
           stroke-width: 0.6;
-          outline: none;
           transition: fill 0.15s ease;
         }
-        .rsm-geography:hover { fill: #1a7a48; }
-
-        .map-pin { filter: drop-shadow(0 3px 5px rgba(0,0,0,0.25)); cursor: pointer; }
+        .us-state-path:hover { fill: #1a7a48; }
+        .map-pin { filter: drop-shadow(0 3px 5px rgba(0,0,0,0.25)); }
 
         /* ── Form card ── */
         .contact-card {
@@ -214,31 +259,25 @@ export default function Contact() {
               viewport={{ once: true, margin: "-60px" }}
               transition={{ duration: 0.55 }}
             >
-              <ComposableMap
-                projection="geoAlbersUsa"
-                projectionConfig={{ scale: 750 }}
+              <svg
                 className="contact-map-svg"
+                viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`}
+                xmlns="http://www.w3.org/2000/svg"
               >
-                <Geographies geography={US_STATES_TOPO_JSON}>
-                  {({ geographies }) =>
-                    geographies.map((geo) => (
-                      <Geography key={geo.rsmKey} geography={geo} className="rsm-geography" />
-                    ))
-                  }
-                </Geographies>
-
-                {PINS.map((pin) => (
-                  <Marker key={pin.name} coordinates={pin.coords}>
-                    <g className="map-pin" transform="translate(-11, -28)">
-                      <path
-                        d="M11 0C4.9 0 0 4.9 0 11c0 8.25 11 19 11 19s11-10.75 11-19C22 4.9 17.1 0 11 0z"
-                        fill="#1a7a48"
-                      />
-                      <circle cx="11" cy="11" r="4.2" fill="#fff" />
-                    </g>
-                  </Marker>
+                {statePaths.map((s) => (
+                  <path key={s.id} d={s.d} className="us-state-path" />
                 ))}
-              </ComposableMap>
+
+                {pinPositions.map((pin) => (
+                  <g key={pin.name} className="map-pin" transform={`translate(${pin.x - 11}, ${pin.y - 28})`}>
+                    <path
+                      d="M11 0C4.9 0 0 4.9 0 11c0 8.25 11 19 11 19s11-10.75 11-19C22 4.9 17.1 0 11 0z"
+                      fill="#1a7a48"
+                    />
+                    <circle cx="11" cy="11" r="4.2" fill="#fff" />
+                  </g>
+                ))}
+              </svg>
             </motion.div>
 
             <motion.div
