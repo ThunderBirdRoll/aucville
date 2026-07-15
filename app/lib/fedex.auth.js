@@ -1,7 +1,6 @@
 
 async function getFedexToken() {
   try {
-    console.log('Using FedEx creds:', process.env.FEDEX_API_KEY, process.env.FEDEX_SECRET_KEY.slice(0, 4) + '...');
     const response = await fetch(`${process.env.FEDEX_BASE_URL}/oauth/token`, {
       method: 'POST',
       headers: {

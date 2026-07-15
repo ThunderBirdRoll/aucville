@@ -22,7 +22,7 @@ async function payoutPickupScheduledOrders() {
     // 1. find eligible orders: createdAt strictly between minCutoff and maxCutoff
     const orders = await Order.find({
         status: "pickup_scheduled",
-        // createdAt: { $gte: minCutoff, $lte: maxCutoff },
+        createdAt: { $gte: minCutoff, $lte: maxCutoff },
         stripeTransferId: null, // idempotency guard: never pay twice
     }).populate("senderId"); // senderId = seller
 

@@ -2,11 +2,14 @@ import { connectDB } from "../../../lib/db";
 import Auction from "../../../schema/auction";
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../../auth/[...nextauth]/route.js";
 
 export async function POST(req) {
   try {
     console.log("Received request to create auction");
-
+    const session = await getServerSession(authOptions);
+    if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 });
     await connectDB();
 
     const body = await req.json();
@@ -18,12 +21,12 @@ export async function POST(req) {
       startingPrice,
       category,
       endTime,
-     packageDetails,
-     owner,
+      packageDetails,
+      owner,
     } = body;
 
 
-    console.log("Parsed request body",body);    // validation
+    console.log("Parsed request body", body);    // validation
     if (
       !title?.trim() ||
       !imageUrl ||
@@ -31,7 +34,7 @@ export async function POST(req) {
       !category ||
       !endTime ||
       !packageDetails ||
-      !owner
+      !session?.user?.id
     ) {
       return NextResponse.json(
         {
@@ -58,11 +61,11 @@ export async function POST(req) {
         { status: 400 }
       );
     }
-const ownerId = new mongoose.Types.ObjectId(owner);
+    const ownerId = new mongoose.Types.ObjectId(owner);
     const auction = await Auction.create({
       // remove this if owner required=false
       // otherwise replace with logged-in user id
-      owner: ownerId,
+      owner: new mongoose.Types.ObjectId(session?.user?.id)|| ownerId,
 
       title: title.trim(),
       imageUrl,
@@ -86,7 +89,7 @@ const ownerId = new mongoose.Types.ObjectId(owner);
         message: "Auction created successfully",
         data: auction,
       },
-      { status: 201 }
+      { status: 200 }
     );
   } catch (error) {
     console.error(error);

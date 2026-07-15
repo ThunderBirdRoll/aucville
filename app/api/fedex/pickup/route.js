@@ -66,6 +66,7 @@ export async function POST(req) {
                         stateOrProvinceCode: order.senderAddress.state,
                         postalCode: order.senderAddress.zip,
                         countryCode: order.senderAddress.country || "US",
+                        // residential: true
                     },
                 },
                 packageLocation: "FRONT",

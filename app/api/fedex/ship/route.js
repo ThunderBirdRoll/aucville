@@ -152,8 +152,11 @@ export async function POST(req) {
         const data = await response.json();
 
         if (!response.ok) {
+            console.log("shipp", JSON.stringify(data, null, 2));
             return NextResponse.json(
+                
                 { success: false, error: "FedEx ship failed", details: data },
+
                 { status: response.status }
             );
         }
