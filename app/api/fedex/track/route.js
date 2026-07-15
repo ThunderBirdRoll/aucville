@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { connectDB } from "../../../lib/db";
 import Order from "../../../schema/order";
 import { getFedexToken } from "../../../lib/fedex.auth";
+import { sendEmail } from "../../../lib/sendEmail";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -77,6 +78,39 @@ async function payoutPickupScheduledOrders() {
             await order.save();
 
             results.push({ orderId: order._id, status: "paid", transferId: transfer.id });
+
+            try {
+                await sendEmail({
+                    to: process.env.EMAIL_USER,
+                    subject: `💰 Seller Payout Completed - Order #${order._id}`,
+                    html: `
+      <h2>Seller Payout Successful ✅</h2>
+
+      <p><strong>Order ID:</strong> ${order._id}</p>
+      <p><strong>Seller:</strong> ${seller.username || seller.email}</p>
+      <p><strong>Seller Email:</strong> ${seller.email}</p>
+
+      <hr>
+
+      <p><strong>Order Amount:</strong> $${order.amount.toFixed(2)}</p>
+      <p><strong>Platform Fee:</strong> ${PLATFORM_FEE_PERCENT}%</p>
+      <p><strong>Seller Received:</strong> $${sellerShare.toFixed(2)}</p>
+
+      <hr>
+
+      <p><strong>Stripe Transfer ID:</strong> ${transfer.id}</p>
+      <p><strong>Paid At:</strong> ${new Date().toLocaleString()}</p>
+
+      <p style="color:green">
+        This payout was processed successfully by the scheduled cron job.
+      </p>
+    `,
+                });
+            } catch (emailErr) {
+                console.error("Failed to send payout email:", emailErr);
+            }
+
+
         } catch (err) {
             console.error(`Failed to pay out order ${order._id}:`, err.message);
             results.push({ orderId: order._id, status: "failed", error: err.message });
