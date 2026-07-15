@@ -103,6 +103,9 @@ function OrderCard({ order, role }) {
         <div className="order-head-right">
           <div className="order-amount">${order.amount?.toLocaleString()}</div>
           <StatusBadge status={order.status} />
+          {order.status === "paid" && <span>
+            Shipping issue — please contact support
+          </span>}
         </div>
       </div>
 

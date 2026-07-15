@@ -93,8 +93,6 @@ export async function POST(req) {
     } catch (err) {
       shipError = err.message || "Could not create shipment";
       console.error("FedEx ship error:", shipError);
-      // We deliberately do NOT throw here — payment already succeeded.
-      // The order stays at status "paid" so it can be retried/shipped manually.
     }
 
     /*
@@ -258,9 +256,10 @@ export async function POST(req) {
 
     await sendEmail(sellerEmailPayload);
 
-    // ── Schedule FedEx pickup (non-blocking) ──
+
     let pickupError = null;
-    try {
+     if(shipment){
+       try {
       const pickupRes = await fetch(
         `${process.env.NEXT_PUBLIC_BASE_URL}/api/fedex/pickup`,
         {
@@ -280,8 +279,9 @@ export async function POST(req) {
     } catch (error) {
       pickupError = error.message || "FedEx pickup creation failed";
       console.error("FedEx Pickup Error:", pickupError);
-      // Non-blocking — don't throw, let the response go through
+
     }
+     }
 
     // ── Final response ──
     return Response.json({

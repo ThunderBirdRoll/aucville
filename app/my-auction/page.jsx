@@ -9,7 +9,7 @@ import { createPortal } from "react-dom";
 import {
   User, Mail, MapPin, Plus, Gavel, Trophy,
   Clock, CheckCircle, BarChart2, Loader2, AlertCircle,
-  ChevronRight, Package, Edit2, Upload, Link, X, ImageIcon,ShoppingCart
+  ChevronRight, Package, Edit2, Upload, Link, X, ImageIcon, ShoppingCart
 } from "lucide-react";
 
 const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
@@ -30,7 +30,7 @@ function PlaceOrderButton({ auction }) {
     try {
       const res = await fetch("/api/user/me");
       const data = await res.json();
-      console.log("data",data);
+      console.log("data", data);
       const addr = data.address;
       const hasAddress = addr && (addr.addressline1 || addr.city);
       if (!hasAddress) {
@@ -203,25 +203,25 @@ function PayoutBanner({ router }) {
 function MoreInfoNeededBanner({ router }) {
   const [loading, setLoading] = useState(false);
 
- const goUpdate = async () => {
-  setLoading(true);
-  try {
-    const res = await fetch("/api/payment/seller/account", { method: "POST" });
-    const data = await res.json();
-    if (data.url) {
-      window.location.href = data.url;
-    } else if (data.alreadyCompleted) {
-      // shouldn't normally hit this if needsMoreInfo was true, but handle gracefully
-      window.location.reload();
-    } else {
-      alert(data.error || "Could not open update form.");
+  const goUpdate = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/payment/seller/account", { method: "POST" });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else if (data.alreadyCompleted) {
+        // shouldn't normally hit this if needsMoreInfo was true, but handle gracefully
+        window.location.reload();
+      } else {
+        alert(data.error || "Could not open update form.");
+        setLoading(false);
+      }
+    } catch {
+      alert("Something went wrong.");
       setLoading(false);
     }
-  } catch {
-    alert("Something went wrong.");
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <div
@@ -370,7 +370,7 @@ function EditAuctionModal({ auction, onClose, onSaved }) {
     marginBottom: 10,
   };
 
- const modalContent = (
+  const modalContent = (
     <>
       <style>{`
         .edit-modal-scroll::-webkit-scrollbar { display: none; }
@@ -400,7 +400,7 @@ function EditAuctionModal({ auction, onClose, onSaved }) {
               width: 42, height: 42, borderRadius: 12, background: "#E7F5EF",
               display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
             }}>
-             <ShoppingCart size={19} stroke="#1B3A2D" />.
+              <ShoppingCart size={19} stroke="#1B3A2D" />.
             </div>
             <div>
               <h3 style={{ fontSize: 17, fontWeight: 500, color: "#111827", lineHeight: 1.2, margin: 0 }}>
@@ -915,12 +915,16 @@ export default function ProfilePage() {
                   <div className="id-email"><Mail size={12} />{data.user.email}</div>
                 </div>
               </div>
+              {data.ownedAuctions.length > 0 && (
+                <>
+                  {payoutStatus.needsPayout && (
+                    <PayoutBanner router={router} />
+                  )}
+                  {payoutStatus.needsMoreInfo && (
+                    <MoreInfoNeededBanner router={router} />
+                  )}
+                </>
 
-              {payoutStatus.needsPayout && (
-                <PayoutBanner router={router} />
-              )}
-              {payoutStatus.needsMoreInfo && (
-                <MoreInfoNeededBanner router={router} />
               )}
 
               {/* ── Stats ─────────────────────────────────────────────────── */}
