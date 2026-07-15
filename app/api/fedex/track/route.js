@@ -16,11 +16,11 @@ async function payoutPickupScheduledOrders() {
     await connectDB();
 
     const now = Date.now();
-    // order must be AT LEAST 10 days old, but not yet 15 days old
+ 
     const minCutoff = new Date(now - MAX_DAYS * 24 * 60 * 60 * 1000); // older boundary
     const maxCutoff = new Date(now - MIN_DAYS * 24 * 60 * 60 * 1000); // newer boundary
 
-    // 1. find eligible orders: createdAt strictly between minCutoff and maxCutoff
+   
     const orders = await Order.find({
         status: "pickup_scheduled",
         createdAt: { $gte: minCutoff, $lte: maxCutoff },
