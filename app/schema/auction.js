@@ -2,11 +2,11 @@ import mongoose from "mongoose";
 
 const AuctionSchema = new mongoose.Schema(
   {
-    owner:{
+    owner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User"
     },
-    bids:[
+    bids: [
       {
         bidder: {
           type: mongoose.Schema.Types.ObjectId,
@@ -17,7 +17,7 @@ const AuctionSchema = new mongoose.Schema(
         },
       }
     ],
-    buyer:{
+    buyer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User"
     },
@@ -39,7 +39,7 @@ const AuctionSchema = new mongoose.Schema(
     startingPrice: {
       type: Number,
       required: true,
-      min:1
+      min: 1
     },
 
     category: {
@@ -77,6 +77,10 @@ const AuctionSchema = new mongoose.Schema(
         required: true,
         max: 30,
       },
+    },
+    isVerify: {
+      type: Boolean,
+      default: true,
     },
   },
   {

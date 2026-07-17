@@ -9,23 +9,23 @@ import Stripe from "stripe";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 const PLATFORM_FEE_PERCENT = 7; // platform keeps 7%
-const MIN_DAYS = 10;
-const MAX_DAYS = 15;
+const MIN_DAYS = 12;
+const MAX_DAYS = 17;
 
 async function payoutPickupScheduledOrders() {
     await connectDB();
 
     const now = Date.now();
  
-    const minCutoff = new Date(now - MAX_DAYS * 24 * 60 * 60 * 1000); // older boundary
-    const maxCutoff = new Date(now - MIN_DAYS * 24 * 60 * 60 * 1000); // newer boundary
+    const minCutoff = new Date(now - MAX_DAYS * 24 * 60 * 60 * 1000); 
+    const maxCutoff = new Date(now - MIN_DAYS * 24 * 60 * 60 * 1000); 
 
    
     const orders = await Order.find({
         status: "pickup_scheduled",
         createdAt: { $gte: minCutoff, $lte: maxCutoff },
-        stripeTransferId: null, // idempotency guard: never pay twice
-    }).populate("senderId"); // senderId = seller
+        stripeTransferId: null, 
+    }).populate("senderId"); zz
 
     const results = [];
 
